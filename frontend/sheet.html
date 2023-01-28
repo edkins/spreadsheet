@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sheet</title>
+<script>
+"use strict";
+
+// Get sheet id
+// The pathname is /sheet/<sheet_id>
+var sheet_id = location.pathname.split("/")[2];
+var data = {};
+var client_data = {cells:{}};
+
+async function load() {
+    // Retrieve sheet data from server
+    const path = `/sheet/${sheet_id}/data`;
+    const response = await fetch(path);
+    data = await response.json();
+    refresh_svg();
+}
+
+function add_cell_to_svg(svg, cell_data) {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', cell_data.display.x);
+    rect.setAttribute('y', cell_data.display.y);
+    rect.setAttribute('width', cell_data.display.w);
+    rect.setAttribute('height', cell_data.display.h);
+    rect.setAttribute('fill', 'white');
+    if (cell_data.metadata && cell_data.metadata.operation) {
+        rect.setAttribute('fill', 'red');
+    }
+    svg.appendChild(rect);
+}
+
+function refresh_svg() {
+    // Refresh the SVG
+    const svg = document.getElementById('sheet');
+    svg.innerHTML = '';
+    for (const [key, value] of Object.entries(data.cells)) {
+        add_cell_to_svg(svg, value);
+    }
+    for (const [key, value] of Object.entries(client_data.cells)) {
+        add_cell_to_svg(svg, value);
+    }
+}
+
+async function click_sheet(e) {
+    const x = e.offsetX;
+    const y = e.offsetY;
+    const w = 300;
+    const h = 30;
+    // Generate a random cell id
+    const cell_id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const name = '';
+
+    // Send a request to the server to create a cell
+    const path = `/sheet/${sheet_id}/cell/${cell_id}`;
+    var cell_data = {
+        name,
+        display: {
+            x,
+            y,
+            w,
+            h,
+        },
+        metadata: {
+            operation: 'create',
+        }
+    };
+    client_data.cells[cell_id] = cell_data;
+    refresh_svg();
+    const res = await fetch(path, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cell_data)
+    });
+
+    // Check if the server has accepted the cell
+    if (res.ok) {
+        // If the server has accepted the cell, add the cell to the sheet
+        cell_data = await res.json();
+        data.cells[cell_id] = cell_data;
+        delete client_data.cells[cell_id];
+        refresh_svg();
+    }
+}
+
+window.onload = load;
+
+</script>
+</head>
+<body style="margin: 0">
+    <div style="width: 100vw; height: 100vh; display: grid; width: 100%; grid-template-columns: 1fr 8fr; grid-template-rows: 1fr 1fr 10fr; background: #def">
+        <div>
+            Name
+        </div>
+        <div>
+            <input type="text" id="name" style="width: 100%; height: 90%" disabled/>
+        </div>
+        <div>
+            Formula
+        </div>
+        <div>
+            <input type="text" id="formula" style="width: 100%; height: 90%" disabled/>
+        </div>
+        <div style="grid-column: 1/3">
+            <svg id="sheet" width="100%" height="100%" style="background:#888894" onclick="click_sheet(event)">
+            </svg>
+        </div>
+    </div>
+</body>
+</html>
