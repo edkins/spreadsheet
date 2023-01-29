@@ -28,6 +28,17 @@
             },
             "additionalProperties": false
         },
+        "computed": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "metadata": {
             "type": "object",
             "properties": {

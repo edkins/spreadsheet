@@ -27,9 +27,12 @@ function add_cell_to_svg(svg, cell_id, cell_data) {
     rect.setAttribute('y', cell_data.display.y);
     rect.setAttribute('width', cell_data.display.w);
     rect.setAttribute('height', cell_data.display.h);
-    rect.setAttribute('fill', 'white');
     if (cell_data.metadata && cell_data.metadata.operation) {
         rect.setAttribute('fill', 'red');
+    } else if (cell_data.computed && cell_data.computed.error) {
+        rect.setAttribute('fill', '#fbb');
+    } else {
+        rect.setAttribute('fill', 'white');
     }
     if (selection.includes(cell_id)) {
         rect.setAttribute('stroke', 'blue');
@@ -67,9 +70,12 @@ async function click_sheet(e) {
     const y = e.offsetY;
 
     // Find the cell at the given coordinates
-    const cell_id = find_cell(x, y);
+    var cell_id = find_cell(x, y);
     if (cell_id === undefined) {
-        add_cell_at(x, y);
+        cell_id = await add_cell_at(x, y);
+        if (cell_id !== undefined) {
+            edit_cell(cell_id);
+        }
     } else {
         edit_cell(cell_id);
     }
@@ -86,10 +92,24 @@ function refresh_selected() {
     const name_input = document.getElementById('name');
     const formula_input = document.getElementById('formula');
     const delete_button = document.getElementById('delete');
+    const value_span = document.getElementById('value');
+    const error_span = document.getElementById('error');
     if (selection.length === 1) {
         const cell = data.cells[selection[0]];
         name_input.value = cell.name;
         formula_input.value = cell.formula;
+
+        if (cell.computed && cell.computed.value) {
+            value_span.textContent = cell.computed.value;
+        } else {
+            value_span.textContent = '';
+        }
+
+        if (cell.computed && cell.computed.error) {
+            error_span.textContent = cell.computed.error;
+        } else {
+            error_span.textContent = '';
+        }
 
         name_input.disabled = false;
         formula_input.disabled = false;
@@ -97,6 +117,8 @@ function refresh_selected() {
     } else {
         name_input.value = '';
         formula_input.value = '';
+        value_span.textContent = '';
+        error_span.textContent = '';
         name_input.disabled = true;
         formula_input.disabled = true;
         delete_button.disabled = true;
@@ -143,7 +165,10 @@ async function add_cell_at(x, y) {
         data.cells[cell_id] = cell_data;
         delete client_data.cells[cell_id];
         refresh_svg();
+        return cell_id;
     }
+
+    return undefined;
 }
 
 async function delete_cell() {
@@ -165,12 +190,61 @@ async function delete_cell() {
     refresh_svg();
 }
 
+async function calc_all() {
+    // Send a request to the server to calculate all cells
+    const path = `/sheet/${sheet_id}/calc`;
+    const res = await fetch(path, {
+        method: 'POST',
+    });
+
+    // Check if the server has calculated all cells
+    if (res.ok) {
+        // If the server has calculated all cells, refresh the sheet
+        data = await res.json();
+        refresh_svg();
+        refresh_selected();
+    }
+}
+
+async function change_formula() {
+    const formula_input = document.getElementById('formula');
+    const formula = formula_input.value;
+    for (const cell_id of selection) {
+        // Send a request to the server to change the formula of the cell
+        const path = `/sheet/${sheet_id}/cell/${cell_id}`;
+        // Create a deep copy of the cell
+        var cell_data = JSON.parse(JSON.stringify(data.cells[cell_id]));
+        cell_data.formula = formula;
+        cell_data.metadata = {
+            operation: 'update',
+        };
+        client_data.cells[cell_id] = cell_data;
+        refresh_svg();
+        const res = await fetch(path, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cell_data)
+        });
+
+        // Check if the server has changed the formula of the cell
+        if (res.ok) {
+            // If the server has changed the formula of the cell, change the formula of the cell in the sheet
+            cell_data = await res.json();
+            data.cells[cell_id] = cell_data;
+            delete client_data.cells[cell_id];
+            refresh_svg();
+        }
+    }
+}
+
 window.onload = load;
 
 </script>
 </head>
 <body style="margin: 0">
-    <div style="width: 100vw; height: 100vh; display: grid; width: 100%; grid-template-columns: 1fr 8fr; grid-template-rows: 1fr 1fr 1fr 20fr; background: #def">
+    <div style="width: 100vw; height: 100vh; display: grid; width: 100%; grid-template-columns: 1fr 8fr; grid-template-rows: 1fr 1fr 1fr 1fr 1fr 20fr; background: #def">
         <div>
             Name
         </div>
@@ -181,13 +255,27 @@ window.onload = load;
             Formula
         </div>
         <div>
-            <input type="text" id="formula" style="width: 100%; height: 90%" disabled/>
+            <input type="text" id="formula" style="width: 100%; height: 90%" disabled onchange="change_formula()"/>
         </div>
         <div>
             Type
         </div>
         <div>
+            <button id="calc_all" style="height: 90%" onclick="calc_all()">Calc all</button>
+            |
             <button id="delete" style="height: 90%" disabled onclick="delete_cell()">Delete</button>
+        </div>
+        <div>
+            Value
+        </div>
+        <div>
+            <span id="value"></span>
+        </div>
+        <div>
+            Error
+        </div>
+        <div>
+            <span id="error" style="color: red"></span>
         </div>
         <div style="grid-column: 1/3">
             <svg id="sheet" width="100%" height="100%" style="background:#888894" onclick="click_sheet(event)">

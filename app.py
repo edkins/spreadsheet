@@ -25,6 +25,12 @@ def get_all_cells(sheet_id):
     s = get_sheet(sheet_id)
     return s
 
+@app.route('/sheet/<uuid:sheet_id>/calc', methods=['POST'])
+def calc_all(sheet_id):
+    s = get_sheet(sheet_id)
+    sheet.calculate_all_and_save(sheet_id, s)
+    return s
+
 @app.route('/sheet/<uuid:sheet_id>/cell/<cell_id>', methods=['GET', 'PUT', 'DELETE'])
 def cell_op(sheet_id, cell_id):
     if request.method == 'GET':

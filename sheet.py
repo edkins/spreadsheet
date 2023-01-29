@@ -5,6 +5,9 @@ import re
 from typing import Optional
 import uuid
 
+from calculate import calculate, CalculationError
+from parse import parse, ParseError
+
 re_cell_id = re.compile(r'^[a-zA-Z0-9-_]+$')
 
 with open('cell_schema.json', 'r') as f:
@@ -78,4 +81,20 @@ def delete_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str) -> None:
         raise ValueError('Cell does not exist')
 
     del sheet['cells'][cell_id]
+    _save_sheet(name, sheet, must_exist=True)
+
+def calculate_all_and_save(name: uuid.UUID, sheet: dict) -> None:
+    filename = _name_to_filename(name, must_exist=True)
+
+    for cell_id, cell in sheet['cells'].items():
+        cell['computed'] = {}
+
+    for cell_id, cell in sheet['cells'].items():
+        try:
+            formula = parse(cell['formula'])
+            cell['computed']['value'] = str(calculate(formula))
+        # Catch a ParseError or CalculationError and add it to the cell
+        except (ParseError, CalculationError) as e:
+            cell['computed']['error'] = str(e)
+
     _save_sheet(name, sheet, must_exist=True)
