@@ -1,23 +1,22 @@
 from parse import Expr, Number, Name, Apply
 from typing import Any
+from value import Value, singleton_float
 
 class CalculationError(Exception):
     pass
 
-def calculate(expr: Expr) -> Any:
+def calculate(expr: Expr, env: dict[str, Value]) -> Value:
     if isinstance(expr, Number):
-        return expr.value
+        return singleton_float(expr.value)
     elif isinstance(expr, Name):
-        raise CalculationError("Cannot calculate names yet")
+        if expr.name not in env:
+            raise CalculationError(f"Unknown cell: {expr.name}")
+        return env[expr.name]
     elif isinstance(expr, Apply):
-        if expr.func == "+":
-            return calculate(expr.args[0]) + calculate(expr.args[1])
-        elif expr.func == "-":
-            return calculate(expr.args[0]) - calculate(expr.args[1])
-        elif expr.func == "*":
-            return calculate(expr.args[0]) * calculate(expr.args[1])
-        elif expr.func == "/":
-            return calculate(expr.args[0]) / calculate(expr.args[1])
+        lhs = calculate(expr.args[0], env)
+        rhs = calculate(expr.args[1], env)
+        if expr.func in ['+', '-', '*', '/']:
+            return lhs.scalar_builtin(expr.func, rhs)
         else:
             raise CalculationError(f"Unknown function {expr.func}")
     else:
