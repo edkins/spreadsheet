@@ -17,12 +17,12 @@ class FormulaListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by FormulaParser#number.
-    def enterNumber(self, ctx:FormulaParser.NumberContext):
+    # Enter a parse tree produced by FormulaParser#ufloat.
+    def enterUfloat(self, ctx:FormulaParser.UfloatContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#number.
-    def exitNumber(self, ctx:FormulaParser.NumberContext):
+    # Exit a parse tree produced by FormulaParser#ufloat.
+    def exitUfloat(self, ctx:FormulaParser.UfloatContext):
         pass
 
 
@@ -59,6 +59,60 @@ class FormulaListener(ParseTreeListener):
 
     # Exit a parse tree produced by FormulaParser#name.
     def exitName(self, ctx:FormulaParser.NameContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#uint.
+    def enterUint(self, ctx:FormulaParser.UintContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#uint.
+    def exitUint(self, ctx:FormulaParser.UintContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#Lambda.
+    def enterLambda(self, ctx:FormulaParser.LambdaContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#Lambda.
+    def exitLambda(self, ctx:FormulaParser.LambdaContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#args.
+    def enterArgs(self, ctx:FormulaParser.ArgsContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#args.
+    def exitArgs(self, ctx:FormulaParser.ArgsContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#ArgWithSize.
+    def enterArgWithSize(self, ctx:FormulaParser.ArgWithSizeContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#ArgWithSize.
+    def exitArgWithSize(self, ctx:FormulaParser.ArgWithSizeContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#ArgWithoutName.
+    def enterArgWithoutName(self, ctx:FormulaParser.ArgWithoutNameContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#ArgWithoutName.
+    def exitArgWithoutName(self, ctx:FormulaParser.ArgWithoutNameContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#ArgWithoutSize.
+    def enterArgWithoutSize(self, ctx:FormulaParser.ArgWithoutSizeContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#ArgWithoutSize.
+    def exitArgWithoutSize(self, ctx:FormulaParser.ArgWithoutSizeContext):
         pass
 
 

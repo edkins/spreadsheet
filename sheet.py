@@ -96,6 +96,8 @@ def _calculate_all(sheet: dict) -> None:
     values = {}    # indexed by cell name
     dependencies = {} # indexed by cell id
 
+    cell_names = set(cell['name'] for cell in sheet['cells'].values())
+
     for cell_id, cell in sheet['cells'].items():
         if not re_cell_name.match(cell['name']):
             cell['computed']['error'] = 'Invalid cell name'
@@ -103,8 +105,13 @@ def _calculate_all(sheet: dict) -> None:
             cell['computed']['error'] = 'Duplicate cell name'
         else:
             try:
-                formulas[cell_id] = parse(cell['formula'])
-                dependencies[cell_id] = get_dependencies(formulas[cell_id])
+                formula = parse(cell['formula'])
+                deps = get_dependencies(formula)
+                if any(d not in cell_names for d in deps):
+                    cell['computed']['error'] = 'Unknown cell reference'
+                else:
+                    formulas[cell_id] = parse(cell['formula'])
+                    dependencies[cell_id] = deps
             # Catch a ParseError or CalculationError and add it to the cell
             except (ParseError, CalculationError) as e:
                 cell['computed']['error'] = str(e)
@@ -126,7 +133,7 @@ def _calculate_all(sheet: dict) -> None:
 
         # Calculate the chosen formula
         try:
-            val = calculate(formulas[chosen_cell_id], values)
+            val = calculate(formulas[chosen_cell_id], values).value
             values[chosen_cell['name']] = val
             chosen_cell['computed']['value'] = tensor_to_str(val)
         except CalculationError as e:

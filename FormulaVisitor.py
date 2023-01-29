@@ -14,8 +14,8 @@ class FormulaVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by FormulaParser#number.
-    def visitNumber(self, ctx:FormulaParser.NumberContext):
+    # Visit a parse tree produced by FormulaParser#ufloat.
+    def visitUfloat(self, ctx:FormulaParser.UfloatContext):
         return self.visitChildren(ctx)
 
 
@@ -36,6 +36,36 @@ class FormulaVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by FormulaParser#name.
     def visitName(self, ctx:FormulaParser.NameContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#uint.
+    def visitUint(self, ctx:FormulaParser.UintContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#Lambda.
+    def visitLambda(self, ctx:FormulaParser.LambdaContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#args.
+    def visitArgs(self, ctx:FormulaParser.ArgsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#ArgWithSize.
+    def visitArgWithSize(self, ctx:FormulaParser.ArgWithSizeContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#ArgWithoutName.
+    def visitArgWithoutName(self, ctx:FormulaParser.ArgWithoutNameContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#ArgWithoutSize.
+    def visitArgWithoutSize(self, ctx:FormulaParser.ArgWithoutSizeContext):
         return self.visitChildren(ctx)
 
 
