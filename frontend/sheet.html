@@ -11,6 +11,7 @@
 var sheet_id = location.pathname.split("/")[2];
 var data = {};
 var client_data = {cells:{}};
+var selection = [];
 
 async function load() {
     // Retrieve sheet data from server
@@ -20,7 +21,7 @@ async function load() {
     refresh_svg();
 }
 
-function add_cell_to_svg(svg, cell_data) {
+function add_cell_to_svg(svg, cell_id, cell_data) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', cell_data.display.x);
     rect.setAttribute('y', cell_data.display.y);
@@ -30,6 +31,10 @@ function add_cell_to_svg(svg, cell_data) {
     if (cell_data.metadata && cell_data.metadata.operation) {
         rect.setAttribute('fill', 'red');
     }
+    if (selection.includes(cell_id)) {
+        rect.setAttribute('stroke', 'blue');
+        rect.setAttribute('stroke-width', '2');
+    }
     svg.appendChild(rect);
 }
 
@@ -38,26 +43,79 @@ function refresh_svg() {
     const svg = document.getElementById('sheet');
     svg.innerHTML = '';
     for (const [key, value] of Object.entries(data.cells)) {
-        add_cell_to_svg(svg, value);
+        add_cell_to_svg(svg, key, value);
     }
     for (const [key, value] of Object.entries(client_data.cells)) {
-        add_cell_to_svg(svg, value);
+        add_cell_to_svg(svg, key, value);
     }
+}
+
+function find_cell(x, y) {
+    // Find the cell at the given coordinates
+    for (const [key, value] of Object.entries(data.cells)) {
+        const cell = value;
+        if (x >= cell.display.x && x < cell.display.x + cell.display.w &&
+            y >= cell.display.y && y < cell.display.y + cell.display.h) {
+            return key;
+        }
+    }
+    return undefined;
 }
 
 async function click_sheet(e) {
     const x = e.offsetX;
     const y = e.offsetY;
+
+    // Find the cell at the given coordinates
+    const cell_id = find_cell(x, y);
+    if (cell_id === undefined) {
+        add_cell_at(x, y);
+    } else {
+        edit_cell(cell_id);
+    }
+}
+
+function edit_cell(cell_id) {
+    // Edit the given cell
+    selection = [cell_id];
+    refresh_selected();
+    refresh_svg();
+}
+
+function refresh_selected() {
+    const name_input = document.getElementById('name');
+    const formula_input = document.getElementById('formula');
+    const delete_button = document.getElementById('delete');
+    if (selection.length === 1) {
+        const cell = data.cells[selection[0]];
+        name_input.value = cell.name;
+        formula_input.value = cell.formula;
+
+        name_input.disabled = false;
+        formula_input.disabled = false;
+        delete_button.disabled = false;
+    } else {
+        name_input.value = '';
+        formula_input.value = '';
+        name_input.disabled = true;
+        formula_input.disabled = true;
+        delete_button.disabled = true;
+    }
+}
+
+async function add_cell_at(x, y) {
     const w = 300;
     const h = 30;
     // Generate a random cell id
     const cell_id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const name = '';
+    const formula = '';
 
     // Send a request to the server to create a cell
     const path = `/sheet/${sheet_id}/cell/${cell_id}`;
     var cell_data = {
         name,
+        formula,
         display: {
             x,
             y,
@@ -88,12 +146,31 @@ async function click_sheet(e) {
     }
 }
 
+async function delete_cell() {
+    for (const cell_id of selection) {
+        // Send a request to the server to delete the cell
+        const path = `/sheet/${sheet_id}/cell/${cell_id}`;
+        const res = await fetch(path, {
+            method: 'DELETE',
+        });
+
+        // Check if the server has deleted the cell
+        if (res.ok) {
+            // If the server has deleted the cell, delete the cell from the sheet
+            delete data.cells[cell_id];
+        }
+    }
+    selection = [];
+    refresh_selected();
+    refresh_svg();
+}
+
 window.onload = load;
 
 </script>
 </head>
 <body style="margin: 0">
-    <div style="width: 100vw; height: 100vh; display: grid; width: 100%; grid-template-columns: 1fr 8fr; grid-template-rows: 1fr 1fr 10fr; background: #def">
+    <div style="width: 100vw; height: 100vh; display: grid; width: 100%; grid-template-columns: 1fr 8fr; grid-template-rows: 1fr 1fr 1fr 20fr; background: #def">
         <div>
             Name
         </div>
@@ -105,6 +182,12 @@ window.onload = load;
         </div>
         <div>
             <input type="text" id="formula" style="width: 100%; height: 90%" disabled/>
+        </div>
+        <div>
+            Type
+        </div>
+        <div>
+            <button id="delete" style="height: 90%" disabled onclick="delete_cell()">Delete</button>
         </div>
         <div style="grid-column: 1/3">
             <svg id="sheet" width="100%" height="100%" style="background:#888894" onclick="click_sheet(event)">

@@ -34,7 +34,7 @@ def _name_to_filename(name: uuid.UUID, must_exist:bool=False) -> str:
     return filename
 
 def load_sheet(name: uuid.UUID) -> Optional[dict]:
-    filename = _name_to_filename(name)
+    filename = _name_to_filename(name, must_exist=False)
     if os.path.exists(filename):
         with open(filename, 'r') as f:
             result = json.load(f)
@@ -50,8 +50,6 @@ def _save_sheet(name: uuid.UUID, sheet: dict, must_exist:bool=False) -> None:
 
 def update_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict) -> dict:
     filename = _name_to_filename(name, must_exist=True)
-    if not os.path.exists(filename):
-        raise ValueError('Sheet does not exist')
 
     if not re_cell_id.match(cell_id):
         raise ValueError('Invalid cell ID')
@@ -69,3 +67,15 @@ def update_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict)
     del sheet['cells'][cell_id]['metadata']
     _save_sheet(name, sheet, must_exist=True)
     return sheet['cells'][cell_id]
+
+def delete_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str) -> None:
+    filename = _name_to_filename(name, must_exist=True)
+
+    if not re_cell_id.match(cell_id):
+        raise ValueError('Invalid cell ID')
+
+    if cell_id not in sheet['cells']:
+        raise ValueError('Cell does not exist')
+
+    del sheet['cells'][cell_id]
+    _save_sheet(name, sheet, must_exist=True)

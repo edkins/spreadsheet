@@ -7,6 +7,9 @@
         "name": {
             "type": "string"
         },
+        "formula": {
+            "type": "string"
+        },
         "display": {
             "type": "object",
             "properties": {

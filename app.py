@@ -25,7 +25,7 @@ def get_all_cells(sheet_id):
     s = get_sheet(sheet_id)
     return s
 
-@app.route('/sheet/<uuid:sheet_id>/cell/<cell_id>', methods=['GET', 'PUT'])
+@app.route('/sheet/<uuid:sheet_id>/cell/<cell_id>', methods=['GET', 'PUT', 'DELETE'])
 def cell_op(sheet_id, cell_id):
     if request.method == 'GET':
         return send_file('frontend/cell.html')
@@ -33,5 +33,9 @@ def cell_op(sheet_id, cell_id):
         s = get_sheet(sheet_id)
         cell_data = sheet.update_cell_and_save(sheet_id, s, cell_id, request.json)
         return cell_data
+    elif request.method == 'DELETE':
+        s = get_sheet(sheet_id)
+        sheet.delete_cell_and_save(sheet_id, s, cell_id)
+        return '', 204
     else:
         raise Exception('Invalid request method')
