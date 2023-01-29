@@ -6,9 +6,9 @@ import re
 from typing import Optional
 import uuid
 
-from calculate import calculate, CalculationError
+from calculate import calculate, CalculationError, get_dependencies
 from parse import parse, ParseError
-from value import Value, UnknownValue, TypedValue
+from display import tensor_to_str
 
 re_cell_id = re.compile(r'^[a-zA-Z0-9-_]+$')
 re_cell_name = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
@@ -94,6 +94,7 @@ def _calculate_all(sheet: dict) -> None:
 
     formulas = {}  # indexed by cell id
     values = {}    # indexed by cell name
+    dependencies = {} # indexed by cell id
 
     for cell_id, cell in sheet['cells'].items():
         if not re_cell_name.match(cell['name']):
@@ -103,41 +104,40 @@ def _calculate_all(sheet: dict) -> None:
         else:
             try:
                 formulas[cell_id] = parse(cell['formula'])
-                values[cell['name']] = UnknownValue()
+                dependencies[cell_id] = get_dependencies(formulas[cell_id])
             # Catch a ParseError or CalculationError and add it to the cell
             except (ParseError, CalculationError) as e:
                 cell['computed']['error'] = str(e)
 
     # Repeatedly calculate cells until no more cells can be calculated
     while True:
-        changed = False
-        for cell_id in formulas:
-            cell = sheet['cells'][cell_id]
-            cell_name = cell['name']
+        # Find a formula where all of its dependencies have been calculated
+        chosen_cell_id = None
+        for cell_id in formulas.keys():
+            if all(d in values for d in dependencies[cell_id]):
+                chosen_cell_id = cell_id
+                break
 
-            if values[cell_name].complete:
-                continue
-
-            try:
-                new_value = calculate(formulas[cell_id], values)
-                if new_value != values[cell_name]:
-                    cell['computed']['value'] = str(new_value)
-                    cell['computed']['type'] = new_value.type_string
-                    values[cell_name] = new_value
-                    changed = True
-            except CalculationError as e:
-                cell['computed']['error'] = str(e)
-
-        if not changed:
+        # If no formula was found, then we're done
+        if chosen_cell_id is None:
             break
 
-    # Go over any incomplete ones that don't already have an error string
-    # and mark them as cyclic dependencies
+        chosen_cell = sheet['cells'][chosen_cell_id]
+
+        # Calculate the chosen formula
+        try:
+            val = calculate(formulas[chosen_cell_id], values)
+            values[chosen_cell['name']] = val
+            chosen_cell['computed']['value'] = tensor_to_str(val)
+        except CalculationError as e:
+            sheet['cells'][chosen_cell_id]['computed']['error'] = str(e)
+
+        del formulas[chosen_cell_id]
+
+    # Go over any unvisited ones and mark them as cyclic dependencies
     for cell_id in formulas:
         cell = sheet['cells'][cell_id]
-        cell_name = cell['name']
-        if not values[cell_name].complete and cell['computed']['error'] is None:
-            cell['computed']['error'] = 'Cyclic dependency'
+        cell['computed']['error'] = 'Cyclic dependency'
 
 def calculate_all_and_save(name: uuid.UUID, sheet: dict) -> None:
     filename = _name_to_filename(name, must_exist=True)
