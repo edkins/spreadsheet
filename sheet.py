@@ -9,6 +9,7 @@ from calculate import calculate, CalculationError
 from parse import parse, ParseError
 
 re_cell_id = re.compile(r'^[a-zA-Z0-9-_]+$')
+re_cell_name = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
 
 with open('cell_schema.json', 'r') as f:
     cell_schema = json.load(f)
@@ -51,7 +52,7 @@ def _save_sheet(name: uuid.UUID, sheet: dict, must_exist:bool=False) -> None:
     with open(filename, 'w') as f:
         json.dump(sheet, f, indent=2)
 
-def update_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict) -> dict:
+def update_cell_calc_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict) -> None:
     filename = _name_to_filename(name, must_exist=True)
 
     if not re_cell_id.match(cell_id):
@@ -68,10 +69,10 @@ def update_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict)
     jsonschema.validate(data, cell_schema)
     sheet['cells'][cell_id] = dict(data)
     del sheet['cells'][cell_id]['metadata']
+    _calculate_all(sheet)
     _save_sheet(name, sheet, must_exist=True)
-    return sheet['cells'][cell_id]
 
-def delete_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str) -> None:
+def delete_cell_calc_and_save(name: uuid.UUID, sheet: dict, cell_id: str) -> None:
     filename = _name_to_filename(name, must_exist=True)
 
     if not re_cell_id.match(cell_id):
@@ -81,11 +82,10 @@ def delete_cell_and_save(name: uuid.UUID, sheet: dict, cell_id: str) -> None:
         raise ValueError('Cell does not exist')
 
     del sheet['cells'][cell_id]
+    _calculate_all(sheet)
     _save_sheet(name, sheet, must_exist=True)
 
-def calculate_all_and_save(name: uuid.UUID, sheet: dict) -> None:
-    filename = _name_to_filename(name, must_exist=True)
-
+def _calculate_all(sheet: dict) -> None:
     for cell_id, cell in sheet['cells'].items():
         cell['computed'] = {}
 
@@ -97,4 +97,12 @@ def calculate_all_and_save(name: uuid.UUID, sheet: dict) -> None:
         except (ParseError, CalculationError) as e:
             cell['computed']['error'] = str(e)
 
+        if not re_cell_name.match(cell['name']):
+            cell['computed']['error'] = 'Invalid cell name'
+        elif any(c['name'] == cell['name'] for i,c in sheet['cells'].items() if cell_id != i):
+            cell['computed']['error'] = 'Duplicate cell name'
+
+def calculate_all_and_save(name: uuid.UUID, sheet: dict) -> None:
+    filename = _name_to_filename(name, must_exist=True)
+    _calculate_all(sheet)
     _save_sheet(name, sheet, must_exist=True)

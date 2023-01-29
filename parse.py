@@ -38,6 +38,9 @@ class Name(Expr):
         return self.name
 
 class FormulaVisitor(FormulaVisitor):
+    def visitFormula(self, ctx: FormulaParser.FormulaContext):
+        return self.visit(ctx.expr())
+
     def visitMulDiv(self, ctx: FormulaParser.MulDivContext):
         left = self.visit(ctx.expr(0))
         right = self.visit(ctx.expr(1))
@@ -61,14 +64,19 @@ class FormulaVisitor(FormulaVisitor):
         return self.visit(ctx.expr())
 
     def visitName(self, ctx: FormulaParser.NameContext):
-        return Name(ctx.ID().getText())
+        return Name(ctx.NAME().getText())
 
 def parse(expr: str) -> Expr:
     lexer = FormulaLexer(InputStream(expr))
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(ExceptionErrorListener())
     stream = CommonTokenStream(lexer)
     parser = FormulaParser(stream)
     parser.removeErrorListeners()
     parser.addErrorListener(ExceptionErrorListener())
-    tree = parser.expr()
+    tree = parser.formula()
     visitor = FormulaVisitor()
-    return visitor.visit(tree)
+    result = visitor.visit(tree)
+    if result == None:
+        raise Exception("Result shouldn't be None")
+    return result

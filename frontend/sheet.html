@@ -28,7 +28,7 @@ function add_cell_to_svg(svg, cell_id, cell_data) {
     rect.setAttribute('width', cell_data.display.w);
     rect.setAttribute('height', cell_data.display.h);
     if (cell_data.metadata && cell_data.metadata.operation) {
-        rect.setAttribute('fill', 'red');
+        rect.setAttribute('fill', '#def');
     } else if (cell_data.computed && cell_data.computed.error) {
         rect.setAttribute('fill', '#fbb');
     } else {
@@ -39,6 +39,18 @@ function add_cell_to_svg(svg, cell_id, cell_data) {
         rect.setAttribute('stroke-width', '2');
     }
     svg.appendChild(rect);
+
+    let caption = cell_data.name;
+    if (cell_data.computed && cell_data.computed.value) {
+        caption += ` = ${cell_data.computed.value}`;
+    }
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', cell_data.display.x + 5);
+    text.setAttribute('y', cell_data.display.y + 15);
+    text.setAttribute('font-size', '12');
+    text.setAttribute('fill', 'black');
+    text.textContent = caption;
+    svg.appendChild(text);
 }
 
 function refresh_svg() {
@@ -160,10 +172,10 @@ async function add_cell_at(x, y) {
 
     // Check if the server has accepted the cell
     if (res.ok) {
-        // If the server has accepted the cell, add the cell to the sheet
-        cell_data = await res.json();
-        data.cells[cell_id] = cell_data;
+        // If the server has accepted the cell, return the new data
+        data = await res.json();
         delete client_data.cells[cell_id];
+        refresh_selected();
         refresh_svg();
         return cell_id;
     }
@@ -181,8 +193,8 @@ async function delete_cell() {
 
         // Check if the server has deleted the cell
         if (res.ok) {
-            // If the server has deleted the cell, delete the cell from the sheet
-            delete data.cells[cell_id];
+            // If the server has deleted the cell, replace the data with the new data
+            data = await res.json();
         }
     }
     selection = [];
@@ -190,31 +202,29 @@ async function delete_cell() {
     refresh_svg();
 }
 
-async function calc_all() {
-    // Send a request to the server to calculate all cells
-    const path = `/sheet/${sheet_id}/calc`;
-    const res = await fetch(path, {
-        method: 'POST',
-    });
-
-    // Check if the server has calculated all cells
-    if (res.ok) {
-        // If the server has calculated all cells, refresh the sheet
-        data = await res.json();
-        refresh_svg();
-        refresh_selected();
-    }
-}
-
 async function change_formula() {
     const formula_input = document.getElementById('formula');
     const formula = formula_input.value;
+    await update_selected_cells(cell_data => {
+        cell_data.formula = formula;
+    });
+}
+
+async function change_name() {
+    const name_input = document.getElementById('name');
+    const name = name_input.value;
+    await update_selected_cells(cell_data => {
+        cell_data.name = name;
+    });
+}
+
+async function update_selected_cells(updater) {
     for (const cell_id of selection) {
         // Send a request to the server to change the formula of the cell
         const path = `/sheet/${sheet_id}/cell/${cell_id}`;
         // Create a deep copy of the cell
         var cell_data = JSON.parse(JSON.stringify(data.cells[cell_id]));
-        cell_data.formula = formula;
+        updater(cell_data);
         cell_data.metadata = {
             operation: 'update',
         };
@@ -230,10 +240,10 @@ async function change_formula() {
 
         // Check if the server has changed the formula of the cell
         if (res.ok) {
-            // If the server has changed the formula of the cell, change the formula of the cell in the sheet
-            cell_data = await res.json();
-            data.cells[cell_id] = cell_data;
+            // If the server has changed the formula of the cell, replace the data with the new data
+            data = await res.json();
             delete client_data.cells[cell_id];
+            refresh_selected();
             refresh_svg();
         }
     }
@@ -249,7 +259,7 @@ window.onload = load;
             Name
         </div>
         <div>
-            <input type="text" id="name" style="width: 100%; height: 90%" disabled/>
+            <input type="text" id="name" style="width: 100%; height: 90%" disabled onchange="change_name()"/>
         </div>
         <div>
             Formula
@@ -261,8 +271,6 @@ window.onload = load;
             Type
         </div>
         <div>
-            <button id="calc_all" style="height: 90%" onclick="calc_all()">Calc all</button>
-            |
             <button id="delete" style="height: 90%" disabled onclick="delete_cell()">Delete</button>
         </div>
         <div>

@@ -31,17 +31,15 @@ def calc_all(sheet_id):
     sheet.calculate_all_and_save(sheet_id, s)
     return s
 
-@app.route('/sheet/<uuid:sheet_id>/cell/<cell_id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/sheet/<uuid:sheet_id>/cell/<cell_id>', methods=['PUT', 'DELETE'])
 def cell_op(sheet_id, cell_id):
-    if request.method == 'GET':
-        return send_file('frontend/cell.html')
-    elif request.method == 'PUT':
+    if request.method == 'PUT':
         s = get_sheet(sheet_id)
-        cell_data = sheet.update_cell_and_save(sheet_id, s, cell_id, request.json)
-        return cell_data
+        sheet.update_cell_calc_and_save(sheet_id, s, cell_id, request.json)
+        return s
     elif request.method == 'DELETE':
         s = get_sheet(sheet_id)
-        sheet.delete_cell_and_save(sheet_id, s, cell_id)
-        return '', 204
+        sheet.delete_cell_calc_and_save(sheet_id, s, cell_id)
+        return s
     else:
         raise Exception('Invalid request method')
