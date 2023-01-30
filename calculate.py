@@ -1,4 +1,4 @@
-from parse import Expr, Number, Name, Apply, Arg, Lambda
+from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIndex, NameIndex, AllIndex
 from typing import Any
 from torch import Tensor
 import torch
@@ -19,8 +19,23 @@ def get_dependencies(expr: Expr, lambda_args: tuple[str] = ()) -> set[str]:
     elif isinstance(expr, Lambda):
         new_args = lambda_args + tuple(arg.name for arg in expr.args if arg.name is not None)
         return get_dependencies(expr.expr, new_args)
+    elif isinstance(expr, GetItem):
+        return get_dependencies(expr.expr, lambda_args).union(*[get_index_dependencies(index, lambda_args) for index in expr.indexes])
     else:
-        raise CalculationError(f"Unknown expr kind")
+        raise CalculationError(f"Unknown expr kind in get_dependencies: {type(expr)}")
+
+def get_index_dependencies(index: Index, lambda_args: tuple[str]) -> set[str]:
+    if isinstance(index, UintIndex):
+        return set()
+    elif isinstance(index, NameIndex):
+        if index.name in lambda_args:
+            return set()
+        else:
+            return {index.name}
+    elif isinstance(index, AllIndex):
+        return set()
+    else:
+        raise CalculationError(f"Unknown index kind in get_index_dependencies: {type(index)}")
 
 # For each dimension of the result, we store the corresponding arg name.
 # This will be an integer if the dimension is not an arg.
@@ -37,7 +52,7 @@ class CalcResult:
         if any(d is None for d in dims):
             raise Exception("None in dims")
         if len(dims) != len(value.shape):
-            raise CalculationError(f"Wrong number of dims")
+            raise CalculationError(f"Wrong number of dims: {len(dims)} != {len(value.shape)}")
         int_dims = tuple(d for d in dims if isinstance(d,int))
         if int_dims != tuple(range(len(int_dims))):
             raise CalculationError(f"Unnamed dims must be in order. Got {int_dims}")
@@ -102,6 +117,9 @@ class CalcResult:
                     raise CalculationError(f"Wrong size for dim {dim}: {new_sizes[dim]} != {my_size}")
             else:
                 new_sizes[dim] = my_size
+
+        if self.count_unnamed_dims() != len([d for d in dims if isinstance(d,int)]):
+            raise CalculationError(f"Wrong number of unnamed dims: {self.count_unnamed_dims()} != {len([d for d in dims if isinstance(d,int)])}")
         return self.swizzle_and_broadcast_to(dims, new_sizes)
 
     # Convert the given named and unnamed dimensions to unnamed dimensions
@@ -119,6 +137,51 @@ class CalcResult:
             else:
                 new_dims.append(dim)
         return CalcResult(self.value, new_dims)
+
+    def get_item(self, indexes: tuple[Index]):
+        if len(indexes) == 0:
+            raise CalculationError("Can't get item with no indexes")
+        if self.count_unnamed_dims() != len(indexes):
+            raise CalculationError(f"Wrong number of indexes {len(indexes)} for {self.count_unnamed_dims()}")
+
+        py_indexes = []
+        resulting_dims = []
+        d = 0
+        d_out = 0
+        for d_self, dim in enumerate(self.dims):
+            if isinstance(dim, str):
+                py_indexes.append(slice(None))
+                resulting_dims.append(dim)
+            elif isinstance(dim, int):
+                index = indexes[d]
+                d += 1
+                if isinstance(index, UintIndex):
+                    if index.value < 0 or index.value >= self.value.shape[d_self]:
+                        raise CalculationError(f"Index {index.value} out of range")
+                    py_indexes.append(index.value) # No resulting dim here
+                elif isinstance(index, NameIndex):
+                    py_indexes.append(slice(None))
+                    resulting_dims.append(index.name)
+                elif isinstance(index, AllIndex):
+                    py_indexes.append(slice(None))
+                    resulting_dims.append(d_out)
+                    d_out += 1
+                else:
+                    raise Exception("Unrecognized kind of index")
+            else:
+                raise Exception("Dims must be str or int")
+
+        if len(set(resulting_dims)) != len(resulting_dims):
+            raise CalculationError(f"Currently unsupported: repeated dimensions in indexing (diagonal extraction)")  # TODO
+
+        if len(py_indexes) == 1:
+            result = self.value[py_indexes[0]]
+        else:
+            result = self.value[tuple(py_indexes)]
+
+        if len(result.shape) != len(resulting_dims):
+            raise Exception(f"Dim mismatch in get_item: {result.shape} vs {resulting_dims}")
+        return CalcResult(result, resulting_dims)
 
 # Given a collection of CalcResults, we want to rejig the dimensions
 # so that they all match up.
@@ -204,5 +267,8 @@ def calculate(expr: Expr, env: dict[str, Tensor]) -> CalcResult:
                 dims.append(num_unnamed_args)
                 num_unnamed_args += 1
         return calculate(expr.expr, new_env).swizzle_and_broadcast_maybe_missing_sizes(dims, sizes).anonymize(dims)
+    elif isinstance(expr, GetItem):
+        return calculate(expr.expr, env).get_item(expr.indexes)
     else:
-        raise CalculationError(f"Unknown expr kind")
+        raise CalculationError(f"Unknown expr kind: {type(expr)}")
+

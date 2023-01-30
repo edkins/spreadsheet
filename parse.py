@@ -57,6 +57,37 @@ class Lambda(Expr):
     def __repr__(self):
         return f"{self.names} -> {self.expr}"
 
+class Index:
+    pass
+
+class UintIndex:
+    def __init__(self, value: int):
+        if value < 0:
+            raise ParseError("Negative index")
+        self.value = value
+
+    def __repr__(self):
+        return str(self.value)
+
+class NameIndex:
+    def __init__(self, name: str):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+class AllIndex:
+    def __repr__(self):
+        return ":"
+
+class GetItem(Expr):
+    def __init__(self, expr: Expr, indexes: tuple[Index]):
+        self.expr = expr
+        self.indexes = indexes
+
+    def __repr__(self):
+        return f"{self.expr}[', '.join(map(repr, self.indexes))]"
+
 class FormulaVisitor(FormulaVisitor):
     def visitFormula(self, ctx: FormulaParser.FormulaContext):
         return self.visit(ctx.expr())
@@ -105,6 +136,20 @@ class FormulaVisitor(FormulaVisitor):
 
     def visitName(self, ctx: FormulaParser.NameContext):
         return Name(ctx.NAME().getText())
+
+    def visitUintIndex(self, ctx: FormulaParser.UintIndexContext):
+        return UintIndex(int(ctx.UINT().getText()))
+
+    def visitNameIndex(self, ctx: FormulaParser.NameIndexContext):
+        return NameIndex(ctx.NAME().getText())
+
+    def visitAllIndex(self, ctx: FormulaParser.AllIndexContext):
+        return AllIndex()
+
+    def visitGetItem(self, ctx: FormulaParser.GetItemContext):
+        expr = self.visit(ctx.expr())
+        indexes = tuple(self.visit(index) for index in ctx.indexes().index())
+        return GetItem(expr, indexes)
 
 def parse(expr: str) -> Lambda:
     lexer = FormulaLexer(InputStream(expr))

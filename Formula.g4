@@ -1,18 +1,24 @@
 grammar Formula;
 formula: expr EOF;
-expr : expr op=('*'|'/') expr    # MulDiv
+expr : expr '[' indexes ']'      # GetItem
+     | expr op=('*'|'/') expr    # MulDiv
      | expr op=('+'|'-') expr    # AddSub
      | '[' args ']' '->' expr    # Lambda
-     | UINT                      # uint
-     | UFLOAT                    # ufloat
-     | NAME                      # name
-     | '(' expr ')'              # parens
+     | UINT                      # Uint
+     | UFLOAT                    # Ufloat
+     | NAME                      # Name
+     | '(' expr ')'              # Parens
      ;
 args : arg (',' arg)*;
 arg : NAME ':' UINT              # ArgWithSize
     | ':'                        # ArgWithoutName
     | NAME                       # ArgWithoutSize
     ;
+indexes : index (',' index)*;
+index : UINT                     # UintIndex
+      | NAME                     # NameIndex
+      | ':'                      # AllIndex
+      ;
 MUL : '*';
 DIV : '/';
 ADD : '+';

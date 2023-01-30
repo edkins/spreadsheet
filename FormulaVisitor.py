@@ -14,13 +14,13 @@ class FormulaVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by FormulaParser#ufloat.
-    def visitUfloat(self, ctx:FormulaParser.UfloatContext):
+    # Visit a parse tree produced by FormulaParser#GetItem.
+    def visitGetItem(self, ctx:FormulaParser.GetItemContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by FormulaParser#parens.
-    def visitParens(self, ctx:FormulaParser.ParensContext):
+    # Visit a parse tree produced by FormulaParser#Uint.
+    def visitUint(self, ctx:FormulaParser.UintContext):
         return self.visitChildren(ctx)
 
 
@@ -34,18 +34,23 @@ class FormulaVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by FormulaParser#name.
-    def visitName(self, ctx:FormulaParser.NameContext):
+    # Visit a parse tree produced by FormulaParser#Parens.
+    def visitParens(self, ctx:FormulaParser.ParensContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by FormulaParser#uint.
-    def visitUint(self, ctx:FormulaParser.UintContext):
+    # Visit a parse tree produced by FormulaParser#Ufloat.
+    def visitUfloat(self, ctx:FormulaParser.UfloatContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by FormulaParser#Lambda.
     def visitLambda(self, ctx:FormulaParser.LambdaContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#Name.
+    def visitName(self, ctx:FormulaParser.NameContext):
         return self.visitChildren(ctx)
 
 
@@ -66,6 +71,26 @@ class FormulaVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by FormulaParser#ArgWithoutSize.
     def visitArgWithoutSize(self, ctx:FormulaParser.ArgWithoutSizeContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#indexes.
+    def visitIndexes(self, ctx:FormulaParser.IndexesContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#UintIndex.
+    def visitUintIndex(self, ctx:FormulaParser.UintIndexContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#NameIndex.
+    def visitNameIndex(self, ctx:FormulaParser.NameIndexContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#AllIndex.
+    def visitAllIndex(self, ctx:FormulaParser.AllIndexContext):
         return self.visitChildren(ctx)
 
 

@@ -17,21 +17,21 @@ class FormulaListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by FormulaParser#ufloat.
-    def enterUfloat(self, ctx:FormulaParser.UfloatContext):
+    # Enter a parse tree produced by FormulaParser#GetItem.
+    def enterGetItem(self, ctx:FormulaParser.GetItemContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#ufloat.
-    def exitUfloat(self, ctx:FormulaParser.UfloatContext):
+    # Exit a parse tree produced by FormulaParser#GetItem.
+    def exitGetItem(self, ctx:FormulaParser.GetItemContext):
         pass
 
 
-    # Enter a parse tree produced by FormulaParser#parens.
-    def enterParens(self, ctx:FormulaParser.ParensContext):
+    # Enter a parse tree produced by FormulaParser#Uint.
+    def enterUint(self, ctx:FormulaParser.UintContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#parens.
-    def exitParens(self, ctx:FormulaParser.ParensContext):
+    # Exit a parse tree produced by FormulaParser#Uint.
+    def exitUint(self, ctx:FormulaParser.UintContext):
         pass
 
 
@@ -53,21 +53,21 @@ class FormulaListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by FormulaParser#name.
-    def enterName(self, ctx:FormulaParser.NameContext):
+    # Enter a parse tree produced by FormulaParser#Parens.
+    def enterParens(self, ctx:FormulaParser.ParensContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#name.
-    def exitName(self, ctx:FormulaParser.NameContext):
+    # Exit a parse tree produced by FormulaParser#Parens.
+    def exitParens(self, ctx:FormulaParser.ParensContext):
         pass
 
 
-    # Enter a parse tree produced by FormulaParser#uint.
-    def enterUint(self, ctx:FormulaParser.UintContext):
+    # Enter a parse tree produced by FormulaParser#Ufloat.
+    def enterUfloat(self, ctx:FormulaParser.UfloatContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#uint.
-    def exitUint(self, ctx:FormulaParser.UintContext):
+    # Exit a parse tree produced by FormulaParser#Ufloat.
+    def exitUfloat(self, ctx:FormulaParser.UfloatContext):
         pass
 
 
@@ -77,6 +77,15 @@ class FormulaListener(ParseTreeListener):
 
     # Exit a parse tree produced by FormulaParser#Lambda.
     def exitLambda(self, ctx:FormulaParser.LambdaContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#Name.
+    def enterName(self, ctx:FormulaParser.NameContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#Name.
+    def exitName(self, ctx:FormulaParser.NameContext):
         pass
 
 
@@ -113,6 +122,42 @@ class FormulaListener(ParseTreeListener):
 
     # Exit a parse tree produced by FormulaParser#ArgWithoutSize.
     def exitArgWithoutSize(self, ctx:FormulaParser.ArgWithoutSizeContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#indexes.
+    def enterIndexes(self, ctx:FormulaParser.IndexesContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#indexes.
+    def exitIndexes(self, ctx:FormulaParser.IndexesContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#UintIndex.
+    def enterUintIndex(self, ctx:FormulaParser.UintIndexContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#UintIndex.
+    def exitUintIndex(self, ctx:FormulaParser.UintIndexContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#NameIndex.
+    def enterNameIndex(self, ctx:FormulaParser.NameIndexContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#NameIndex.
+    def exitNameIndex(self, ctx:FormulaParser.NameIndexContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#AllIndex.
+    def enterAllIndex(self, ctx:FormulaParser.AllIndexContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#AllIndex.
+    def exitAllIndex(self, ctx:FormulaParser.AllIndexContext):
         pass
 
 
