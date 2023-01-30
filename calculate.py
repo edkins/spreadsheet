@@ -1,7 +1,22 @@
-from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIndex, NameIndex, AllIndex
+from __future__ import annotations
+from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIndex, NameIndex, AllIndex, NamespacedName
 from typing import Any
 from torch import Tensor
 import torch
+
+class Namespace:
+    def __init__(self, stuff: dict[str, Tensor | Namespace]):
+        if not isinstance(stuff, dict):
+            raise ValueError("Namespace must be initialized with a dict")
+        for item in stuff.values():
+            if not isinstance(item, Tensor) and not isinstance(item, Namespace):
+                raise ValueError("Namespace must be initialized with a dict of Tensors and Namespaces")
+        self.stuff = stuff
+
+    def __getitem__(self, name: str) -> Tensor | Namespace:
+        return self.stuff[name]
+
+Value = Tensor | Namespace
 
 class CalculationError(Exception):
     pass
@@ -14,6 +29,10 @@ def get_dependencies(expr: Expr, lambda_args: tuple[str] = ()) -> set[str]:
             return set()
         else:
             return {expr.name}
+    elif isinstance(expr, NamespacedName):
+        if expr.names[0] in lambda_args:
+            raise CalculationError(f"Can't use lambda argument {expr.name} as a namespace")
+        return {expr.names[0]}
     elif isinstance(expr, Apply):
         return set.union(*[get_dependencies(arg, lambda_args) for arg in expr.args])
     elif isinstance(expr, Lambda):
@@ -229,7 +248,7 @@ def swizzle_and_broadcast(params: list[CalcResult]) -> tuple[list[Tensor], list[
     return [r.value for r in results], results[0].dims
 
 
-def calculate(expr: Expr, env: dict[str, Tensor]) -> CalcResult:
+def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
     if isinstance(expr, Number):
         return CalcResult(torch.tensor(expr.value, dtype=torch.float32), ())
     elif isinstance(expr, Name):
@@ -241,8 +260,22 @@ def calculate(expr: Expr, env: dict[str, Tensor]) -> CalcResult:
                 raise CalculationError(f"Require argument size for {result.name}")
             t = torch.arange(0, result.size, dtype=torch.float32)
             return CalcResult(t, (result.name,))
-        else:
+        elif isinstance(result, Tensor):
             return CalcResult(result, tuple(range(len(result.shape))))
+        elif isinstance(result, Namespace):
+            raise CalculationError("Cannot return bare namespace")
+        else:
+            raise Exception(f"Unrecognized type of value: {type(result)}")
+    elif isinstance(expr, NamespacedName):
+        result = env[expr.names[0]]
+        for name in expr.names[1:]:
+            result = result[name]
+        if isinstance(result, Tensor):
+            return CalcResult(result, tuple(range(len(result.shape))))
+        elif isinstance(result, Namespace):
+            raise CalculationError("Cannot return bare namespace")
+        else:
+            raise Exception(f"Unrecognized type of value found in namespace: {type(result)}")
     elif isinstance(expr, Apply):
         args,dims = swizzle_and_broadcast([calculate(arg, env) for arg in expr.args])
         if expr.func == '+':

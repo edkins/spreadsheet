@@ -9,8 +9,18 @@ else:
 
 class FormulaVisitor(ParseTreeVisitor):
 
-    # Visit a parse tree produced by FormulaParser#formula.
-    def visitFormula(self, ctx:FormulaParser.FormulaContext):
+    # Visit a parse tree produced by FormulaParser#Import.
+    def visitImport(self, ctx:FormulaParser.ImportContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#BareExpr.
+    def visitBareExpr(self, ctx:FormulaParser.BareExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by FormulaParser#Namespaced.
+    def visitNamespaced(self, ctx:FormulaParser.NamespacedContext):
         return self.visitChildren(ctx)
 
 

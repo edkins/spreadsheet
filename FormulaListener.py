@@ -8,12 +8,30 @@ else:
 # This class defines a complete listener for a parse tree produced by FormulaParser.
 class FormulaListener(ParseTreeListener):
 
-    # Enter a parse tree produced by FormulaParser#formula.
-    def enterFormula(self, ctx:FormulaParser.FormulaContext):
+    # Enter a parse tree produced by FormulaParser#Import.
+    def enterImport(self, ctx:FormulaParser.ImportContext):
         pass
 
-    # Exit a parse tree produced by FormulaParser#formula.
-    def exitFormula(self, ctx:FormulaParser.FormulaContext):
+    # Exit a parse tree produced by FormulaParser#Import.
+    def exitImport(self, ctx:FormulaParser.ImportContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#BareExpr.
+    def enterBareExpr(self, ctx:FormulaParser.BareExprContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#BareExpr.
+    def exitBareExpr(self, ctx:FormulaParser.BareExprContext):
+        pass
+
+
+    # Enter a parse tree produced by FormulaParser#Namespaced.
+    def enterNamespaced(self, ctx:FormulaParser.NamespacedContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#Namespaced.
+    def exitNamespaced(self, ctx:FormulaParser.NamespacedContext):
         pass
 
 

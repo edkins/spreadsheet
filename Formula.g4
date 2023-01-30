@@ -1,11 +1,14 @@
 grammar Formula;
-formula: expr EOF;
+formula: 'import' NAME           # Import
+     | expr EOF                  # BareExpr
+     ;
 expr : expr '[' indexes ']'      # GetItem
      | expr op=('*'|'/') expr    # MulDiv
      | expr op=('+'|'-') expr    # AddSub
      | '[' args ']' '->' expr    # Lambda
      | UINT                      # Uint
      | UFLOAT                    # Ufloat
+     | (NAME '::')+ NAME         # Namespaced
      | NAME                      # Name
      | '(' expr ')'              # Parens
      ;

@@ -7,8 +7,11 @@ from typing import Optional
 import uuid
 
 from calculate import calculate, CalculationError, get_dependencies
-from parse import parse, ParseError
+from parse import parse, ParseError, Import
 from display import tensor_to_str, type_to_str
+from external_resources import get_external_resource, ImportError
+
+max_sheet_size = 10_000_000
 
 re_cell_id = re.compile(r'^[a-zA-Z0-9-_]+$')
 re_cell_name = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
@@ -52,8 +55,11 @@ def load_sheet(name: uuid.UUID) -> Optional[dict]:
 def _save_sheet(name: uuid.UUID, sheet: dict, must_exist:bool=False) -> None:
     filename = _name_to_filename(name, must_exist)
     jsonschema.validate(sheet, sheet_schema)
+    string = json.dumps(sheet, indent=2)
+    if len(string) > max_sheet_size:
+        raise Exception("Sheet exceeds maximum size")
     with open(filename, 'w') as f:
-        json.dump(sheet, f, indent=2)
+        f.write(string)
 
 def update_cell_calc_and_save(name: uuid.UUID, sheet: dict, cell_id: str, data: dict) -> None:
     filename = _name_to_filename(name, must_exist=True)
@@ -106,14 +112,18 @@ def _calculate_all(sheet: dict) -> None:
         else:
             try:
                 formula = parse(cell['formula'])
-                deps = get_dependencies(formula)
-                if any(d not in cell_names for d in deps):
-                    cell['computed']['error'] = 'Unknown cell reference'
+                if isinstance(formula, Import):
+                    resource = get_external_resource(formula.name)
+                    values[cell['name']] = resource
                 else:
-                    formulas[cell_id] = parse(cell['formula'])
-                    dependencies[cell_id] = deps
+                    deps = get_dependencies(formula)
+                    if any(d not in cell_names for d in deps):
+                        cell['computed']['error'] = 'Unknown cell reference'
+                    else:
+                        formulas[cell_id] = parse(cell['formula'])
+                        dependencies[cell_id] = deps
             # Catch a ParseError or CalculationError and add it to the cell
-            except (ParseError, CalculationError) as e:
+            except (ParseError, CalculationError, ImportError) as e:
                 cell['computed']['error'] = str(e)
 
     # Repeatedly calculate cells until no more cells can be calculated

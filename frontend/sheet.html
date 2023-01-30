@@ -14,11 +14,20 @@ var client_data = {cells:{}};
 var selection = [];
 
 async function load() {
-    // Retrieve sheet data from server
-    const path = `/sheet/${sheet_id}/data`;
-    const response = await fetch(path);
-    data = await response.json();
-    refresh_svg();
+    // Retrieve sheet data from server and force it to recalculate
+    const path = `/sheet/${sheet_id}/calc`;
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', 0);
+    text.setAttribute('y', 20);
+    text.textContent = "Loading...";
+    document.getElementById('sheet').appendChild(text);
+    const response = await fetch(path, {method: 'POST'});
+    if (response.ok) {
+        data = await response.json();
+        refresh_svg();
+    } else {
+        text.textContent = "Loading failed!";
+    }
 }
 
 function add_cell_to_svg(svg, cell_id, cell_data) {

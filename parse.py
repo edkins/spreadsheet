@@ -38,6 +38,15 @@ class Name(Expr):
     def __repr__(self):
         return self.name
 
+class NamespacedName(Expr):
+    def __init__(self, names: list[str]):
+        if len(names) < 2:
+            raise ParseError("Namespaced names must have at least two parts")
+        self.names = names
+
+    def __repr__(self):
+        return '::'.join(self.names)
+
 class Arg:
     def __init__(self, name: Optional[str], size: Optional[int]):
         self.name = name
@@ -88,9 +97,19 @@ class GetItem(Expr):
     def __repr__(self):
         return f"{self.expr}[', '.join(map(repr, self.indexes))]"
 
+class Import(Expr):
+    def __init__(self, name: str):
+        self.name = name
+
+    def __repr__(self):
+        return f"import {self.name}"
+
 class FormulaVisitor(FormulaVisitor):
-    def visitFormula(self, ctx: FormulaParser.FormulaContext):
+    def visitBareExpr(self, ctx: FormulaParser.BareExprContext):
         return self.visit(ctx.expr())
+
+    def visitImport(self, ctx: FormulaParser.ImportContext):
+        return Import(ctx.NAME().getText())
 
     def visitLambda(self, ctx: FormulaParser.LambdaContext):
         args = [self.visit(arg) for arg in ctx.args().arg()]
@@ -136,6 +155,9 @@ class FormulaVisitor(FormulaVisitor):
 
     def visitName(self, ctx: FormulaParser.NameContext):
         return Name(ctx.NAME().getText())
+
+    def visitNamespaced(self, ctx: FormulaParser.NamespacedContext):
+        return NamespacedName([n.getText() for n in ctx.NAME()])
 
     def visitUintIndex(self, ctx: FormulaParser.UintIndexContext):
         return UintIndex(int(ctx.UINT().getText()))
