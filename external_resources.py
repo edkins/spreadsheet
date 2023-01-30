@@ -32,6 +32,7 @@ def load_external_resource(name: str) -> Namespace:
             'attn': {},
             'mlp': {},
             'unembed': {},
+            'cfg': {},
     }
     for name, param in transformer.named_parameters():
         value = param.detach()
@@ -53,6 +54,11 @@ def load_external_resource(name: str) -> Namespace:
                 params[split[0]][split[1]] = value
         except KeyError as e:
             raise ImportError(f'Unexpected parameter name in import: {name}') from e
+
+    cfg = transformer.cfg.to_dict()
+    for key in ['n_layers', 'd_model', 'n_ctx', 'd_head', 'n_heads', 'd_mlp', 'd_vocab']:
+        params['cfg'][key] = torch.tensor(cfg[key], dtype=torch.float32)
+
     for p0 in params:
         for p1 in params[p0]:
             print(f'm::{p0}::{p1} : {type_to_str(params[p0][p1])}')

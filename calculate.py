@@ -267,15 +267,18 @@ def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
         else:
             raise Exception(f"Unrecognized type of value: {type(result)}")
     elif isinstance(expr, NamespacedName):
-        result = env[expr.names[0]]
-        for name in expr.names[1:]:
-            result = result[name]
-        if isinstance(result, Tensor):
-            return CalcResult(result, tuple(range(len(result.shape))))
-        elif isinstance(result, Namespace):
-            raise CalculationError("Cannot return bare namespace")
-        else:
-            raise Exception(f"Unrecognized type of value found in namespace: {type(result)}")
+        try:
+            result = env[expr.names[0]]
+            for name in expr.names[1:]:
+                result = result[name]
+            if isinstance(result, Tensor):
+                return CalcResult(result, tuple(range(len(result.shape))))
+            elif isinstance(result, Namespace):
+                raise CalculationError("Cannot return bare namespace")
+            else:
+                raise Exception(f"Unrecognized type of value found in namespace: {type(result)}")
+        except KeyError as e:
+            raise CalculationError(f"Unknown namespaced value: {expr}") from e
     elif isinstance(expr, Apply):
         args,dims = swizzle_and_broadcast([calculate(arg, env) for arg in expr.args])
         if expr.func == '+':
