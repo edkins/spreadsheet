@@ -34,6 +34,11 @@ class FormulaVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by FormulaParser#Quoted.
+    def visitQuoted(self, ctx:FormulaParser.QuotedContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by FormulaParser#MulDiv.
     def visitMulDiv(self, ctx:FormulaParser.MulDivContext):
         return self.visitChildren(ctx)

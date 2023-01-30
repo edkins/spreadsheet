@@ -10,6 +10,7 @@ expr : expr '[' indexes ']'      # GetItem
      | UFLOAT                    # Ufloat
      | (NAME '::')+ NAME         # Namespaced
      | NAME                      # Name
+     | QUOTED                    # Quoted
      | '(' expr ')'              # Parens
      ;
 args : arg (',' arg)*;
@@ -29,4 +30,5 @@ SUB : '-';
 UINT : [0-9]+;
 UFLOAT : [0-9]+ '.' [0-9]+;
 NAME : [a-zA-Z_][a-zA-Z0-9_]*;
+QUOTED : '"' (~["\\])* '"';
 WS : [ \t\r\n]+ -> skip;

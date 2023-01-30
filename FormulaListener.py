@@ -53,6 +53,15 @@ class FormulaListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by FormulaParser#Quoted.
+    def enterQuoted(self, ctx:FormulaParser.QuotedContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#Quoted.
+    def exitQuoted(self, ctx:FormulaParser.QuotedContext):
+        pass
+
+
     # Enter a parse tree produced by FormulaParser#MulDiv.
     def enterMulDiv(self, ctx:FormulaParser.MulDivContext):
         pass

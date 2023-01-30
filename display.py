@@ -1,7 +1,10 @@
-from torch import Tensor
 import torch
 
-def tensor_to_str(t: Tensor) -> str:
+from obj_array import TensorLike, ObjArray
+
+def tensorlike_to_str(t: TensorLike) -> str:
+    if isinstance(t, ObjArray):
+        return str(t)
     if t.shape == ():
         return str(t.item())
     # Don't print entire tensor if there's more than 16 elements
@@ -16,8 +19,12 @@ def dtype_to_str(dtype: torch.dtype) -> str:
     else:
         raise ValueError(f'Unknown dtype {dtype}')
 
-def type_to_str(t: Tensor) -> str:
-    if t.shape == ():
-        return dtype_to_str(t.dtype)
+def type_to_str(t: TensorLike) -> str:
+    if isinstance(t, ObjArray):
+        type_str = t.type_string
     else:
-        return f'[{", ".join([str(d) for d in t.shape])}] -> {dtype_to_str(t.dtype)}'
+        type_str = dtype_to_str(t.dtype)
+    if t.shape == ():
+        return type_str
+    else:
+        return f'[{", ".join([str(d) for d in t.shape])}] -> {type_str}'

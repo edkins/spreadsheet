@@ -1,28 +1,32 @@
 from __future__ import annotations
-from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIndex, NameIndex, AllIndex, NamespacedName
+from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIndex, NameIndex, AllIndex, NamespacedName, String
 from typing import Any
 from torch import Tensor
 import torch
 
+from obj_array import TensorLike, singleton_str
+
 class Namespace:
-    def __init__(self, stuff: dict[str, Tensor | Namespace]):
+    def __init__(self, stuff: dict[str, TensorLike | Namespace]):
         if not isinstance(stuff, dict):
             raise ValueError("Namespace must be initialized with a dict")
         for item in stuff.values():
-            if not isinstance(item, Tensor) and not isinstance(item, Namespace):
-                raise ValueError("Namespace must be initialized with a dict of Tensors and Namespaces")
+            if not isinstance(item, TensorLike) and not isinstance(item, Namespace):
+                raise ValueError("Namespace must be initialized with a dict of Tensors, ObjArrays and Namespaces")
         self.stuff = stuff
 
     def __getitem__(self, name: str) -> Tensor | Namespace:
         return self.stuff[name]
 
-Value = Tensor | Namespace
+Value = TensorLike | Namespace
 
 class CalculationError(Exception):
     pass
 
 def get_dependencies(expr: Expr, lambda_args: tuple[str] = ()) -> set[str]:
     if isinstance(expr, Number):
+        return set()
+    elif isinstance(expr, String):
         return set()
     elif isinstance(expr, Name):
         if expr.name in lambda_args:
@@ -67,7 +71,7 @@ def get_index_dependencies(index: Index, lambda_args: tuple[str]) -> set[str]:
 #     Then the args will be ('i', 0, 'j')
 
 class CalcResult:
-    def __init__(self, value: Tensor, dims: tuple[str|int]):
+    def __init__(self, value: TensorLike, dims: tuple[str|int]):
         if any(d is None for d in dims):
             raise Exception("None in dims")
         if len(dims) != len(value.shape):
@@ -251,6 +255,8 @@ def swizzle_and_broadcast(params: list[CalcResult]) -> tuple[list[Tensor], list[
 def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
     if isinstance(expr, Number):
         return CalcResult(torch.tensor(expr.value, dtype=torch.float32), ())
+    elif isinstance(expr, String):
+        return CalcResult(singleton_str(expr.value), ())
     elif isinstance(expr, Name):
         if expr.name not in env:
             raise CalculationError(f"Unknown cell: {expr.name}")

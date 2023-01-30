@@ -24,6 +24,13 @@ class Apply(Expr):
     def __repr__(self):
         return f"{self.func}({', '.join(map(repr, self.args))})"
 
+class String(Expr):
+    def __init__(self, value: str):
+        self.value = value
+
+    def __repr__(self):
+        return repr(self.value)
+
 class Number(Expr):
     def __init__(self, value: float):
         self.value = value
@@ -172,6 +179,9 @@ class FormulaVisitor(FormulaVisitor):
         expr = self.visit(ctx.expr())
         indexes = tuple(self.visit(index) for index in ctx.indexes().index())
         return GetItem(expr, indexes)
+
+    def visitQuoted(self, ctx: FormulaParser.QuotedContext):
+        return String(ctx.QUOTED().getText()[1:-1])
 
 def parse(expr: str) -> Lambda:
     lexer = FormulaLexer(InputStream(expr))

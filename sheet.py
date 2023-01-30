@@ -8,7 +8,7 @@ import uuid
 
 from calculate import calculate, CalculationError, get_dependencies
 from parse import parse, ParseError, Import
-from display import tensor_to_str, type_to_str
+from display import tensorlike_to_str, type_to_str
 from external_resources import get_external_resource, ImportError
 
 max_sheet_size = 10_000_000
@@ -145,7 +145,7 @@ def _calculate_all(sheet: dict) -> None:
         try:
             val = calculate(formulas[chosen_cell_id], values).value
             values[chosen_cell['name']] = val
-            chosen_cell['computed']['value'] = tensor_to_str(val)
+            chosen_cell['computed']['value'] = tensorlike_to_str(val)
             chosen_cell['computed']['type'] = type_to_str(val)
         except CalculationError as e:
             sheet['cells'][chosen_cell_id]['computed']['error'] = str(e)
