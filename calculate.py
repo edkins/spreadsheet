@@ -65,6 +65,9 @@ class CalcResult:
         int_dims = tuple(d for d in self.dims if isinstance(d,int))
         return len(int_dims)
 
+    def named_dims(self) -> tuple[str]:
+        return tuple(d for d in self.dims if isinstance(d,str))
+
     def swizzle_to(self, dims: list[str|int]):
         dims = tuple(dims)
         if self.dims == dims:
@@ -72,11 +75,11 @@ class CalcResult:
         my_int_dims = tuple(d for d in self.dims if isinstance(d,int))
         int_dims = tuple(d for d in dims if isinstance(d,int))
         if my_int_dims != int_dims:
-            raise CalculationError(f"Wrong int dims: {my_int_dims} != {int_dims}")
+            raise Exception(f"Wrong int dims: {my_int_dims} != {int_dims}")
         if set(self.dims) != set(dims):
-            raise CalculationError(f"Args {self.dims} is not a permutation of {dims}")
+            raise Exception(f"Args {self.dims} is not a permutation of {dims}")
         if len(self.dims) != len(dims):
-            raise CalculationError("This shouldn't happen. Dimension count mismatch.")
+            raise Exception(f"This shouldn't happen. Dimension count mismatch. {self.dims}, {dims}")
         permutation = tuple(map(lambda x: self.dims.index(x), dims))
         return CalcResult(self.value.permute(permutation), dims)
 
@@ -105,6 +108,8 @@ class CalcResult:
 
     def swizzle_and_broadcast_to(self, dims: list[str|int], sizes: dict[str, int]):
         pdims = [d for d in dims if d in self.dims]
+        if len(pdims) < len(self.dims):
+            raise Exception(f"This shouldn't happen. Not all dims are present. {self.dims}, {dims}, {pdims}")
         return self.swizzle_to(pdims).broadcast_to(dims, sizes)
 
     # A more tolerant version that will infer sizes from existing dims where possible.
@@ -266,7 +271,10 @@ def calculate(expr: Expr, env: dict[str, Tensor]) -> CalcResult:
             else:
                 dims.append(num_unnamed_args)
                 num_unnamed_args += 1
-        return calculate(expr.expr, new_env).swizzle_and_broadcast_maybe_missing_sizes(dims, sizes).anonymize(dims)
+        result = calculate(expr.expr, new_env)
+        old_dims = tuple(d for d in result.named_dims() if d in env)
+        dims = tuple(dims)
+        return result.swizzle_and_broadcast_maybe_missing_sizes(old_dims + dims, sizes).anonymize(dims)
     elif isinstance(expr, GetItem):
         return calculate(expr.expr, env).get_item(expr.indexes)
     else:
