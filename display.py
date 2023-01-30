@@ -8,7 +8,7 @@ def tensor_to_str(t: Tensor) -> str:
     elif t.numel() <= 16:
         return str(t.tolist())
     else:
-        return f'[{", ".join([str(d) for d in t.shape])}] -> {dtype_to_str(t.dtype)} {t.flatten()[:8].tolist()}...'
+        return f'...{", ".join(str(e.item()) for e in t.flatten()[:8])}...'
 
 def dtype_to_str(dtype: torch.dtype) -> str:
     if dtype == torch.float32:
