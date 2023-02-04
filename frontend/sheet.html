@@ -31,6 +31,16 @@ async function load() {
 }
 
 function add_cell_to_svg(svg, cell_id, cell_data) {
+    const clippy = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+    clippy.setAttribute('id', `clip_${cell_id}`);
+    const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    clipRect.setAttribute('x', cell_data.display.x);
+    clipRect.setAttribute('y', cell_data.display.y);
+    clipRect.setAttribute('width', cell_data.display.w);
+    clipRect.setAttribute('height', cell_data.display.h);
+    clippy.appendChild(clipRect);
+    svg.appendChild(clippy);
+
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', cell_data.display.x);
     rect.setAttribute('y', cell_data.display.y);
@@ -58,6 +68,7 @@ function add_cell_to_svg(svg, cell_id, cell_data) {
     text.setAttribute('y', cell_data.display.y + 15);
     text.setAttribute('font-size', '12');
     text.setAttribute('fill', 'black');
+    text.setAttribute('clip-path', `url(#clip_${cell_id})`);
     text.textContent = caption;
     svg.appendChild(text);
 }
