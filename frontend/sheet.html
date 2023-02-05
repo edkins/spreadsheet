@@ -246,56 +246,127 @@ async function change_name() {
 
 async function update_selected_cells(updater) {
     for (const cell_id of selection) {
-        // Send a request to the server to change the formula of the cell
-        const path = `/sheet/${sheet_id}/cell/${cell_id}`;
-        // Create a deep copy of the cell
-        var cell_data = JSON.parse(JSON.stringify(data.cells[cell_id]));
-        updater(cell_data);
-        cell_data.metadata = {
-            operation: 'update',
-        };
-        client_data.cells[cell_id] = cell_data;
-        refresh_svg();
-        const res = await fetch(path, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(cell_data)
-        });
+        await update_single_cell(cell_id, updater);
+    }
+}
 
-        // Check if the server has changed the formula of the cell
-        if (res.ok) {
-            // If the server has changed the formula of the cell, replace the data with the new data
-            data = await res.json();
-            delete client_data.cells[cell_id];
-            refresh_selected();
-            refresh_svg();
-        }
+async function update_single_cell(cell_id, updater) {
+    // Send a request to the server to change the formula of the cell
+    const path = `/sheet/${sheet_id}/cell/${cell_id}`;
+    // Create a deep copy of the cell
+    var cell_data = JSON.parse(JSON.stringify(data.cells[cell_id]));
+    updater(cell_data);
+    cell_data.metadata = {
+        operation: 'update',
+    };
+    client_data.cells[cell_id] = cell_data;
+    refresh_svg();
+    const res = await fetch(path, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cell_data)
+    });
+
+    // Check if the server has changed the formula of the cell
+    if (res.ok) {
+        // If the server has changed the formula of the cell, replace the data with the new data
+        data = await res.json();
+        delete client_data.cells[cell_id];
+        refresh_selected();
+        refresh_svg();
     }
 }
 
 let dragging = false;
 let creating = false;
+let resizing = undefined;
+let resizing_cell_id = undefined;
+let resizing_orig_w = undefined;
+let resizing_orig_h = undefined;
 let drag_start_x = undefined;
 let drag_start_y = undefined;
 
+function get_cell_id_at(x, y) {
+    for (const cell_id in data.cells) {
+        const cell = data.cells[cell_id];
+        if (cell.display.x <= x && cell.display.x + cell.display.w > x && cell.display.y <= y && cell.display.y + cell.display.h > y) {
+            return cell_id;
+        }
+    }
+    return undefined;
+}
+
 async function mousemove_sheet(e) {
-    if (e.buttons === 1 && !dragging && !creating) {
-        // See if the mouse is over a cell
-        for (const cell_id in data.cells) {
-            const cell = data.cells[cell_id];
-            if (cell.display.x <= e.offsetX && e.offsetX <= cell.display.x + cell.display.w &&
-                cell.display.y <= e.offsetY && e.offsetY <= cell.display.y + cell.display.h) {
-                // If the mouse is over a cell, start dragging
-                dragging = true;
-                drag_start_x = e.offsetX;
-                drag_start_y = e.offsetY;
-                break;
+    // Set resize cursor if mouse is near the border of a cell
+    const cell_id = get_cell_id_at(e.offsetX, e.offsetY);
+    const svg = document.getElementById('sheet');
+    var resize = undefined;
+    if (cell_id !== undefined) {
+        const cell = data.cells[cell_id];
+        const x = cell.display.x;
+        const y = cell.display.y;
+        const w = cell.display.w;
+        const h = cell.display.h;
+        const border = 10;
+
+        const east = x + w - border < e.offsetX && e.offsetX < x + w + border;
+        const west = x - border < e.offsetX && e.offsetX < x + border;
+        const north = y - border < e.offsetY && e.offsetY < y + border;
+        const south = y + h - border < e.offsetY && e.offsetY < y + h + border;
+
+        const nw = x + w/2 >= e.offsetX && y + h/2 >= e.offsetY;
+        const ne = x + w/2 < e.offsetX && y + h/2 >= e.offsetY;
+        const sw = x + w/2 >= e.offsetX && y + h/2 < e.offsetY;
+        const se = x + w/2 < e.offsetX && y + h/2 < e.offsetY;
+
+        if (se && (east || south)) {
+            svg.style.cursor = 'nwse-resize';
+            resize = 'se';
+        } else if (sw && (west || south)) {
+            svg.style.cursor = 'nesw-resize';
+            resize = 'sw';
+        } else if (ne && (east || north)) {
+            svg.style.cursor = 'nesw-resize';
+            resize = 'ne';
+        } else if (nw && (west || north)) {
+            svg.style.cursor = 'nwse-resize';
+            resize = 'nw';
+        } else {
+            svg.style.cursor = 'default';
+        }
+    } else {
+        svg.style.cursor = 'default';
+    }
+
+    if (e.buttons === 1 && !dragging && !creating && resizing === undefined) {
+        // See if we want to start resizing
+        if (resize !== undefined) {
+            resizing = resize;
+            resizing_cell_id = cell_id;
+            resizing_orig_w = data.cells[cell_id].display.w;
+            resizing_orig_h = data.cells[cell_id].display.h;
+            drag_start_x = e.offsetX;
+            drag_start_y = e.offsetY;
+        }
+
+        if (resizing === undefined) {
+            // See if the mouse is over a cell
+            for (const cell_id in data.cells) {
+                const cell = data.cells[cell_id];
+                if (cell.display.x <= e.offsetX && e.offsetX <= cell.display.x + cell.display.w &&
+                    cell.display.y <= e.offsetY && e.offsetY <= cell.display.y + cell.display.h) {
+                    // If the mouse is over a cell, start dragging
+                    dragging = true;
+                    drag_start_x = e.offsetX;
+                    drag_start_y = e.offsetY;
+                    break;
+                }
             }
         }
 
-        if (!dragging) {
+        if (resizing === undefined && !dragging) {
             creating = true;
             drag_start_x = e.offsetX;
             drag_start_y = e.offsetY;
@@ -312,6 +383,56 @@ async function mousemove_sheet(e) {
             creation_box.setAttribute('stroke-width', 1);
             document.getElementById('sheet').appendChild(creation_box);
         }
+    } else if (resizing !== undefined) {
+        if (e.buttons !== 0) {
+            // Resize the cell
+            const cell_id = resizing_cell_id;
+            const cell = data.cells[cell_id];
+            const x = cell.display.x;
+            const y = cell.display.y;
+            const w = cell.display.w;
+            const h = cell.display.h;
+            const rx = e.offsetX - drag_start_x;
+            const ry = e.offsetY - drag_start_y;
+            if (resizing === 'se') {
+                cell.display.w = resizing_orig_w + rx;
+                cell.display.h = resizing_orig_h + ry;
+            } else if (resizing === 'sw') {
+                const dx = (resizing_orig_w - rx) - w;
+                cell.display.x -= dx;
+                cell.display.w += dx;
+                cell.display.h = resizing_orig_h + ry;
+            } else if (resizing === 'ne') {
+                const dy = (resizing_orig_h - ry) - h;
+                cell.display.y -= dy;
+                cell.display.w = resizing_orig_w + rx;
+                cell.display.h += dy;
+            } else if (resizing === 'nw') {
+                const dx = (resizing_orig_w - rx) - w;
+                const dy = (resizing_orig_h - ry) - h;
+                cell.display.x -= dx;
+                cell.display.y -= dy;
+                cell.display.w += dx;
+                cell.display.h += dy;
+            }
+        } else {
+            resizing = undefined;
+            // Save the cell
+            const cell_id = resizing_cell_id;
+            const cell = data.cells[cell_id];
+            const x = cell.display.x;
+            const y = cell.display.y;
+            const w = cell.display.w;
+            const h = cell.display.h;
+            await update_single_cell(cell_id, cell => {
+                cell.display.x = x;
+                cell.display.y = y;
+                cell.display.w = w;
+                cell.display.h = h;
+            });
+        }
+
+        refresh_svg();
     } else if (dragging) {
         if (e.buttons !== 0) {
             const x = e.offsetX;
@@ -327,7 +448,7 @@ async function mousemove_sheet(e) {
             }
             refresh_svg();
         } else {
-            update_selected_cells(cell_data => {
+            await update_selected_cells(cell_data => {
                 cell_data.display.x += e.offsetX - drag_start_x;
                 cell_data.display.y += e.offsetY - drag_start_y;
             });
