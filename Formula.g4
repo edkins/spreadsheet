@@ -14,7 +14,8 @@ expr : expr '[' indexes ']'      # GetItem
      | '(' expr ')'              # Parens
      ;
 args : arg (',' arg)*;
-arg : NAME ':' UINT              # ArgWithSize
+arg : '#' NAME ':' UINT          # SubcellArgWithSize
+    | NAME ':' UINT              # ArgWithSize
     | ':'                        # ArgWithoutName
     | NAME                       # ArgWithoutSize
     ;

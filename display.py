@@ -16,6 +16,8 @@ def tensorlike_to_str(t: TensorLike) -> str:
 def dtype_to_str(dtype: torch.dtype) -> str:
     if dtype == torch.float32:
         return 'f32'
+    elif dtype == torch.int32:
+        return 'i32'
     else:
         raise ValueError(f'Unknown dtype {dtype}')
 

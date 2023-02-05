@@ -3,6 +3,7 @@ from parse import Expr, Number, Name, Apply, Arg, Lambda, GetItem, Index, UintIn
 from typing import Any
 from torch import Tensor
 import torch
+import itertools
 
 from obj_array import TensorLike, singleton_str
 
@@ -19,42 +20,98 @@ class Namespace:
         return self.stuff[name]
 
 Value = TensorLike | Namespace
+SubcellId = tuple[str, tuple[int]]
 
 class CalculationError(Exception):
     pass
 
-def get_dependencies(expr: Expr, lambda_args: tuple[str] = ()) -> set[str]:
+class CellInfo:
+    def __init__(self, cell_id: str, subcell_dims: tuple[Option[int]]):
+        self.cell_id = cell_id
+        self.subcell_dims = subcell_dims
+
+    def has_subcells(self):
+        return any(d is not None for d in self.subcell_dims)
+
+    def list_subcells(self) -> list[tuple[int]]:
+        if not self.has_subcells():
+            return [()]
+        else:
+            ranges = []
+            for i, d in enumerate(self.subcell_dims):
+                if d is not None:
+                    ranges.append(range(d))
+            return list(itertools.product(*ranges))
+
+def get_subcell_dims(expr: Expr) -> tuple[Option[int]]:
+    if isinstance(expr, Lambda):
+        return tuple(_subcell_dim(d) for d in expr.args)
+    else:
+        return ()
+
+def _subcell_dim(dim: Arg) -> Option[int]:
+    if dim.is_subcell:
+        return dim.size
+    else:
+        return None
+
+def get_subcell_dim_names(expr: Expr) -> tuple[str]:
+    if isinstance(expr, Lambda):
+        return tuple(d.name for d in expr.args if d.is_subcell)
+    else:
+        return ()
+
+def get_dependencies(expr: Expr, lambda_args: tuple[str], subcell_args: dict[str,int], cell_info: dict[str, CellInfo]) -> set[SubcellId]:
     if isinstance(expr, Number):
         return set()
     elif isinstance(expr, String):
         return set()
     elif isinstance(expr, Name):
-        if expr.name in lambda_args:
+        if expr.name in lambda_args or expr.name in subcell_args:
             return set()
+        elif expr.name in cell_info:
+            return {(cell_info[expr.name].cell_id, ())}
         else:
-            return {expr.name}
+            raise CalculationError(f"Unknown name {expr.name}")
     elif isinstance(expr, NamespacedName):
         if expr.names[0] in lambda_args:
             raise CalculationError(f"Can't use lambda argument {expr.name} as a namespace")
         return {expr.names[0]}
     elif isinstance(expr, Apply):
-        return set.union(*[get_dependencies(arg, lambda_args) for arg in expr.args])
+        return set.union(*[get_dependencies(arg, lambda_args, subcell_args, cell_info) for arg in expr.args])
     elif isinstance(expr, Lambda):
-        new_args = lambda_args + tuple(arg.name for arg in expr.args if arg.name is not None)
-        return get_dependencies(expr.expr, new_args)
+        new_lambda_args = list(lambda_args)
+        for arg in expr.args:
+            if not arg.is_subcell and arg.name is not None:
+                if arg.name in new_lambda_args or arg.name in subcell_args:
+                    raise CalculationError(f"Duplicate lambda argument {arg.name}")
+                new_lambda_args.append(arg.name)
+        return get_dependencies(expr.expr, tuple(new_lambda_args), subcell_args, cell_info)
     elif isinstance(expr, GetItem):
-        return get_dependencies(expr.expr, lambda_args).union(*[get_index_dependencies(index, lambda_args) for index in expr.indexes])
+        # Special case for subcell indexing.
+        if isinstance(expr.expr, Name) and cell_info[expr.expr.name].has_subcells():
+            result_deps = set()
+            result_subcell = []
+            for i, arg in enumerate(expr.args):
+                if isinstance(arg, NameIndex):
+                    if arg.name in subcell_args:
+                        result_subcell.append(subcell_args[arg.name])
+                result_deps |= _get_index_dependencies(arg, lambda_args, subcell_args, cell_info)
+            result.deps.add((expr.expr.name, tuple(result_subcell)))
+            return result_deps
+        else:
+            return get_dependencies(expr.expr, lambda_args, subcell_args, cell_info).union(*[_get_index_dependencies(index, lambda_args) for index in expr.indexes])
     else:
         raise CalculationError(f"Unknown expr kind in get_dependencies: {type(expr)}")
 
-def get_index_dependencies(index: Index, lambda_args: tuple[str]) -> set[str]:
+def _get_index_dependencies(index: Index, lambda_args: tuple[str], cell_info: dict[str, CellInfo]) -> set[SubcellId]:
     if isinstance(index, UintIndex):
         return set()
     elif isinstance(index, NameIndex):
         if index.name in lambda_args:
             return set()
         else:
-            return {index.name}
+            return {(cell_info[index.name].cell_id, ())}
     elif isinstance(index, AllIndex):
         return set()
     else:
@@ -252,15 +309,20 @@ def swizzle_and_broadcast(params: list[CalcResult]) -> tuple[list[Tensor], list[
     return [r.value for r in results], results[0].dims
 
 
-def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
+def calculate(expr: Expr, env: dict[str|SubCellId, Value], cell_info: dict[str, CellInfo], subcell: tuple[int]) -> CalcResult:
     if isinstance(expr, Number):
         return CalcResult(torch.tensor(expr.value, dtype=torch.float32), ())
     elif isinstance(expr, String):
         return CalcResult(singleton_str(expr.value), ())
     elif isinstance(expr, Name):
-        if expr.name not in env:
-            raise CalculationError(f"Unknown cell: {expr.name}")
-        result = env[expr.name]
+        if expr.name in cell_info:
+            key = cell_info[expr.name].cell_id, ()
+        elif expr.name in env:
+            key = expr.name
+        else:
+            raise CalculationError(f"Unknown name {expr.name}")
+
+        result = env[key]
         if isinstance(result, Arg):
             if result.size is None:
                 raise CalculationError(f"Require argument size for {result.name}")
@@ -286,7 +348,7 @@ def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
         except KeyError as e:
             raise CalculationError(f"Unknown namespaced value: {expr}") from e
     elif isinstance(expr, Apply):
-        args,dims = swizzle_and_broadcast([calculate(arg, env) for arg in expr.args])
+        args,dims = swizzle_and_broadcast([calculate(arg, env, cell_info, ()) for arg in expr.args])
         if expr.func == '+':
             return CalcResult(args[0] + args[1], dims)
         elif expr.func == '-':
@@ -300,10 +362,16 @@ def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
     elif isinstance(expr, Lambda):
         new_env = dict(env)
         num_unnamed_args = 0
+        subcell_i = 0
         dims = []
         sizes = {}
         for pos, arg in enumerate(expr.args):
-            if arg.name != None:
+            if arg.is_subcell:
+                if subcell_i >= len(subcell):
+                    raise CalculationError(f"Too many subcells in lambda")
+                new_env[arg.name] = torch.tensor(subcell[subcell_i], dtype=torch.int32)
+                subcell_i += 1
+            elif arg.name != None:
                 if arg.name in new_env:
                     raise CalculationError(f"Arg name conflict: {arg.name}")
                 new_env[arg.name] = arg
@@ -313,12 +381,12 @@ def calculate(expr: Expr, env: dict[str, Value]) -> CalcResult:
             else:
                 dims.append(num_unnamed_args)
                 num_unnamed_args += 1
-        result = calculate(expr.expr, new_env)
-        old_dims = tuple(d for d in result.named_dims() if d in env)
+        result = calculate(expr.expr, new_env, cell_info, ())
+        old_dims = tuple(d for d in result.named_dims() if (d,()) in env)
         dims = tuple(dims)
         return result.swizzle_and_broadcast_maybe_missing_sizes(old_dims + dims, sizes).anonymize(dims)
     elif isinstance(expr, GetItem):
-        return calculate(expr.expr, env).get_item(expr.indexes)
+        return calculate(expr.expr, env, cell_info, ()).get_item(expr.indexes)
     else:
         raise CalculationError(f"Unknown expr kind: {type(expr)}")
 

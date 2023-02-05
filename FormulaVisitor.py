@@ -74,6 +74,11 @@ class FormulaVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by FormulaParser#SubcellArgWithSize.
+    def visitSubcellArgWithSize(self, ctx:FormulaParser.SubcellArgWithSizeContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by FormulaParser#ArgWithSize.
     def visitArgWithSize(self, ctx:FormulaParser.ArgWithSizeContext):
         return self.visitChildren(ctx)

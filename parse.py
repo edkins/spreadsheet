@@ -55,9 +55,10 @@ class NamespacedName(Expr):
         return '::'.join(self.names)
 
 class Arg:
-    def __init__(self, name: Optional[str], size: Optional[int]):
+    def __init__(self, name: Optional[str], size: Optional[int], is_subcell: bool=False):
         self.name = name
         self.size = size
+        self.is_subcell = is_subcell
 
     def __repr__(self):
         if self.size == None:
@@ -126,14 +127,17 @@ class FormulaVisitor(FormulaVisitor):
             raise ParseError(f"Duplicate argument name in lambda: {names}")
         return Lambda(args, expr)
 
+    def visitSubcellArgWithSize(self, ctx: FormulaParser.SubcellArgWithSizeContext):
+        return Arg(ctx.NAME().getText(), int(ctx.UINT().getText()), True)
+
     def visitArgWithSize(self, ctx: FormulaParser.ArgWithSizeContext):
-        return Arg(ctx.NAME().getText(), int(ctx.UINT().getText()))
+        return Arg(ctx.NAME().getText(), int(ctx.UINT().getText()), False)
 
     def visitArgWithoutSize(self, ctx: FormulaParser.ArgWithoutSizeContext):
-        return Arg(ctx.NAME().getText(), None)
+        return Arg(ctx.NAME().getText(), None, False)
 
     def visitArgWithoutName(self, ctx: FormulaParser.ArgWithoutNameContext):
-        return Arg(None, None)
+        return Arg(None, None, False)
 
     def visitMulDiv(self, ctx: FormulaParser.MulDivContext):
         left = self.visit(ctx.expr(0))

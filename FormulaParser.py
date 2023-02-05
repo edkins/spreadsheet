@@ -10,35 +10,37 @@ else:
 
 def serializedATN():
     return [
-        4,1,18,88,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,1,
+        4,1,19,92,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,1,
         0,1,0,1,0,1,0,3,0,18,8,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,4,1,31,8,1,11,1,12,1,32,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,42,8,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,55,8,1,10,1,12,
         1,58,9,1,1,2,1,2,1,2,5,2,63,8,2,10,2,12,2,66,9,2,1,3,1,3,1,3,1,3,
-        1,3,3,3,73,8,3,1,4,1,4,1,4,5,4,78,8,4,10,4,12,4,81,9,4,1,5,1,5,1,
-        5,3,5,86,8,5,1,5,0,1,2,6,0,2,4,6,8,10,0,2,1,0,10,11,1,0,12,13,98,
-        0,17,1,0,0,0,2,41,1,0,0,0,4,59,1,0,0,0,6,72,1,0,0,0,8,74,1,0,0,0,
-        10,85,1,0,0,0,12,13,5,1,0,0,13,18,5,16,0,0,14,15,3,2,1,0,15,16,5,
-        0,0,1,16,18,1,0,0,0,17,12,1,0,0,0,17,14,1,0,0,0,18,1,1,0,0,0,19,
-        20,6,1,-1,0,20,21,5,2,0,0,21,22,3,4,2,0,22,23,5,3,0,0,23,24,5,4,
-        0,0,24,25,3,2,1,7,25,42,1,0,0,0,26,42,5,14,0,0,27,42,5,15,0,0,28,
-        29,5,16,0,0,29,31,5,5,0,0,30,28,1,0,0,0,31,32,1,0,0,0,32,30,1,0,
-        0,0,32,33,1,0,0,0,33,34,1,0,0,0,34,42,5,16,0,0,35,42,5,16,0,0,36,
-        42,5,17,0,0,37,38,5,6,0,0,38,39,3,2,1,0,39,40,5,7,0,0,40,42,1,0,
-        0,0,41,19,1,0,0,0,41,26,1,0,0,0,41,27,1,0,0,0,41,30,1,0,0,0,41,35,
-        1,0,0,0,41,36,1,0,0,0,41,37,1,0,0,0,42,56,1,0,0,0,43,44,10,9,0,0,
-        44,45,7,0,0,0,45,55,3,2,1,10,46,47,10,8,0,0,47,48,7,1,0,0,48,55,
-        3,2,1,9,49,50,10,10,0,0,50,51,5,2,0,0,51,52,3,8,4,0,52,53,5,3,0,
-        0,53,55,1,0,0,0,54,43,1,0,0,0,54,46,1,0,0,0,54,49,1,0,0,0,55,58,
-        1,0,0,0,56,54,1,0,0,0,56,57,1,0,0,0,57,3,1,0,0,0,58,56,1,0,0,0,59,
-        64,3,6,3,0,60,61,5,8,0,0,61,63,3,6,3,0,62,60,1,0,0,0,63,66,1,0,0,
-        0,64,62,1,0,0,0,64,65,1,0,0,0,65,5,1,0,0,0,66,64,1,0,0,0,67,68,5,
-        16,0,0,68,69,5,9,0,0,69,73,5,14,0,0,70,73,5,9,0,0,71,73,5,16,0,0,
-        72,67,1,0,0,0,72,70,1,0,0,0,72,71,1,0,0,0,73,7,1,0,0,0,74,79,3,10,
-        5,0,75,76,5,8,0,0,76,78,3,10,5,0,77,75,1,0,0,0,78,81,1,0,0,0,79,
-        77,1,0,0,0,79,80,1,0,0,0,80,9,1,0,0,0,81,79,1,0,0,0,82,86,5,14,0,
-        0,83,86,5,16,0,0,84,86,5,9,0,0,85,82,1,0,0,0,85,83,1,0,0,0,85,84,
-        1,0,0,0,86,11,1,0,0,0,9,17,32,41,54,56,64,72,79,85
+        1,3,1,3,1,3,1,3,1,3,3,3,77,8,3,1,4,1,4,1,4,5,4,82,8,4,10,4,12,4,
+        85,9,4,1,5,1,5,1,5,3,5,90,8,5,1,5,0,1,2,6,0,2,4,6,8,10,0,2,1,0,11,
+        12,1,0,13,14,103,0,17,1,0,0,0,2,41,1,0,0,0,4,59,1,0,0,0,6,76,1,0,
+        0,0,8,78,1,0,0,0,10,89,1,0,0,0,12,13,5,1,0,0,13,18,5,17,0,0,14,15,
+        3,2,1,0,15,16,5,0,0,1,16,18,1,0,0,0,17,12,1,0,0,0,17,14,1,0,0,0,
+        18,1,1,0,0,0,19,20,6,1,-1,0,20,21,5,2,0,0,21,22,3,4,2,0,22,23,5,
+        3,0,0,23,24,5,4,0,0,24,25,3,2,1,7,25,42,1,0,0,0,26,42,5,15,0,0,27,
+        42,5,16,0,0,28,29,5,17,0,0,29,31,5,5,0,0,30,28,1,0,0,0,31,32,1,0,
+        0,0,32,30,1,0,0,0,32,33,1,0,0,0,33,34,1,0,0,0,34,42,5,17,0,0,35,
+        42,5,17,0,0,36,42,5,18,0,0,37,38,5,6,0,0,38,39,3,2,1,0,39,40,5,7,
+        0,0,40,42,1,0,0,0,41,19,1,0,0,0,41,26,1,0,0,0,41,27,1,0,0,0,41,30,
+        1,0,0,0,41,35,1,0,0,0,41,36,1,0,0,0,41,37,1,0,0,0,42,56,1,0,0,0,
+        43,44,10,9,0,0,44,45,7,0,0,0,45,55,3,2,1,10,46,47,10,8,0,0,47,48,
+        7,1,0,0,48,55,3,2,1,9,49,50,10,10,0,0,50,51,5,2,0,0,51,52,3,8,4,
+        0,52,53,5,3,0,0,53,55,1,0,0,0,54,43,1,0,0,0,54,46,1,0,0,0,54,49,
+        1,0,0,0,55,58,1,0,0,0,56,54,1,0,0,0,56,57,1,0,0,0,57,3,1,0,0,0,58,
+        56,1,0,0,0,59,64,3,6,3,0,60,61,5,8,0,0,61,63,3,6,3,0,62,60,1,0,0,
+        0,63,66,1,0,0,0,64,62,1,0,0,0,64,65,1,0,0,0,65,5,1,0,0,0,66,64,1,
+        0,0,0,67,68,5,9,0,0,68,69,5,17,0,0,69,70,5,10,0,0,70,77,5,15,0,0,
+        71,72,5,17,0,0,72,73,5,10,0,0,73,77,5,15,0,0,74,77,5,10,0,0,75,77,
+        5,17,0,0,76,67,1,0,0,0,76,71,1,0,0,0,76,74,1,0,0,0,76,75,1,0,0,0,
+        77,7,1,0,0,0,78,83,3,10,5,0,79,80,5,8,0,0,80,82,3,10,5,0,81,79,1,
+        0,0,0,82,85,1,0,0,0,83,81,1,0,0,0,83,84,1,0,0,0,84,9,1,0,0,0,85,
+        83,1,0,0,0,86,90,5,15,0,0,87,90,5,17,0,0,88,90,5,10,0,0,89,86,1,
+        0,0,0,89,87,1,0,0,0,89,88,1,0,0,0,90,11,1,0,0,0,9,17,32,41,54,56,
+        64,76,83,89
     ]
 
 class FormulaParser ( Parser ):
@@ -52,12 +54,14 @@ class FormulaParser ( Parser ):
     sharedContextCache = PredictionContextCache()
 
     literalNames = [ "<INVALID>", "'import'", "'['", "']'", "'->'", "'::'", 
-                     "'('", "')'", "','", "':'", "'*'", "'/'", "'+'", "'-'" ]
+                     "'('", "')'", "','", "'#'", "':'", "'*'", "'/'", "'+'", 
+                     "'-'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "MUL", "DIV", "ADD", "SUB", 
-                      "UINT", "UFLOAT", "NAME", "QUOTED", "WS" ]
+                      "<INVALID>", "<INVALID>", "<INVALID>", "MUL", "DIV", 
+                      "ADD", "SUB", "UINT", "UFLOAT", "NAME", "QUOTED", 
+                      "WS" ]
 
     RULE_formula = 0
     RULE_expr = 1
@@ -78,15 +82,16 @@ class FormulaParser ( Parser ):
     T__6=7
     T__7=8
     T__8=9
-    MUL=10
-    DIV=11
-    ADD=12
-    SUB=13
-    UINT=14
-    UFLOAT=15
-    NAME=16
-    QUOTED=17
-    WS=18
+    T__9=10
+    MUL=11
+    DIV=12
+    ADD=13
+    SUB=14
+    UINT=15
+    UFLOAT=16
+    NAME=17
+    QUOTED=18
+    WS=19
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -182,7 +187,7 @@ class FormulaParser ( Parser ):
                 self.state = 13
                 self.match(FormulaParser.NAME)
                 pass
-            elif token in [2, 6, 14, 15, 16, 17]:
+            elif token in [2, 6, 15, 16, 17, 18]:
                 localctx = FormulaParser.BareExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 14
@@ -610,7 +615,7 @@ class FormulaParser ( Parser ):
                         self.state = 44
                         localctx.op = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(_la==10 or _la==11):
+                        if not(_la==11 or _la==12):
                             localctx.op = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -629,7 +634,7 @@ class FormulaParser ( Parser ):
                         self.state = 47
                         localctx.op = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(_la==12 or _la==13):
+                        if not(_la==13 or _la==14):
                             localctx.op = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -770,6 +775,32 @@ class FormulaParser ( Parser ):
                 return visitor.visitChildren(self)
 
 
+    class SubcellArgWithSizeContext(ArgContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a FormulaParser.ArgContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def NAME(self):
+            return self.getToken(FormulaParser.NAME, 0)
+        def UINT(self):
+            return self.getToken(FormulaParser.UINT, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterSubcellArgWithSize" ):
+                listener.enterSubcellArgWithSize(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitSubcellArgWithSize" ):
+                listener.exitSubcellArgWithSize(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitSubcellArgWithSize" ):
+                return visitor.visitSubcellArgWithSize(self)
+            else:
+                return visitor.visitChildren(self)
+
+
     class ArgWithoutSizeContext(ArgContext):
 
         def __init__(self, parser, ctx:ParserRuleContext): # actually a FormulaParser.ArgContext
@@ -826,31 +857,44 @@ class FormulaParser ( Parser ):
         localctx = FormulaParser.ArgContext(self, self._ctx, self.state)
         self.enterRule(localctx, 6, self.RULE_arg)
         try:
-            self.state = 72
+            self.state = 76
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,6,self._ctx)
             if la_ == 1:
-                localctx = FormulaParser.ArgWithSizeContext(self, localctx)
+                localctx = FormulaParser.SubcellArgWithSizeContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 67
-                self.match(FormulaParser.NAME)
-                self.state = 68
                 self.match(FormulaParser.T__8)
+                self.state = 68
+                self.match(FormulaParser.NAME)
                 self.state = 69
+                self.match(FormulaParser.T__9)
+                self.state = 70
                 self.match(FormulaParser.UINT)
                 pass
 
             elif la_ == 2:
-                localctx = FormulaParser.ArgWithoutNameContext(self, localctx)
+                localctx = FormulaParser.ArgWithSizeContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
-                self.state = 70
-                self.match(FormulaParser.T__8)
+                self.state = 71
+                self.match(FormulaParser.NAME)
+                self.state = 72
+                self.match(FormulaParser.T__9)
+                self.state = 73
+                self.match(FormulaParser.UINT)
                 pass
 
             elif la_ == 3:
-                localctx = FormulaParser.ArgWithoutSizeContext(self, localctx)
+                localctx = FormulaParser.ArgWithoutNameContext(self, localctx)
                 self.enterOuterAlt(localctx, 3)
-                self.state = 71
+                self.state = 74
+                self.match(FormulaParser.T__9)
+                pass
+
+            elif la_ == 4:
+                localctx = FormulaParser.ArgWithoutSizeContext(self, localctx)
+                self.enterOuterAlt(localctx, 4)
+                self.state = 75
                 self.match(FormulaParser.NAME)
                 pass
 
@@ -905,17 +949,17 @@ class FormulaParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 74
+            self.state = 78
             self.index()
-            self.state = 79
+            self.state = 83
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==8:
-                self.state = 75
+                self.state = 79
                 self.match(FormulaParser.T__7)
-                self.state = 76
+                self.state = 80
                 self.index()
-                self.state = 81
+                self.state = 85
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -1021,26 +1065,26 @@ class FormulaParser ( Parser ):
         localctx = FormulaParser.IndexContext(self, self._ctx, self.state)
         self.enterRule(localctx, 10, self.RULE_index)
         try:
-            self.state = 85
+            self.state = 89
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [14]:
+            if token in [15]:
                 localctx = FormulaParser.UintIndexContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
-                self.state = 82
+                self.state = 86
                 self.match(FormulaParser.UINT)
                 pass
-            elif token in [16]:
+            elif token in [17]:
                 localctx = FormulaParser.NameIndexContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
-                self.state = 83
+                self.state = 87
                 self.match(FormulaParser.NAME)
                 pass
-            elif token in [9]:
+            elif token in [10]:
                 localctx = FormulaParser.AllIndexContext(self, localctx)
                 self.enterOuterAlt(localctx, 3)
-                self.state = 84
-                self.match(FormulaParser.T__8)
+                self.state = 88
+                self.match(FormulaParser.T__9)
                 pass
             else:
                 raise NoViableAltException(self)

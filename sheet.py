@@ -6,7 +6,7 @@ import re
 from typing import Optional
 import uuid
 
-from calculate import calculate, CalculationError, get_dependencies
+from calculate import calculate, CalculationError, get_dependencies, CellInfo, get_subcell_dims, get_subcell_dim_names
 from parse import parse, ParseError, Import
 from display import tensorlike_to_str, type_to_str
 from external_resources import get_external_resource, ImportError
@@ -99,10 +99,10 @@ def _calculate_all(sheet: dict) -> None:
         cell['computed'] = {'value':'', 'type':'', 'error':None}
 
     formulas = {}  # indexed by cell id
-    values = {}    # indexed by cell name
-    dependencies = {} # indexed by cell id
-
-    cell_names = set(cell['name'] for cell in sheet['cells'].values())
+    values = {}    # indexed by (cell id, subcell)
+    dependencies = {} # indexed by (cell id, subcell)
+    cell_info = {} # indexed by cell name
+    error_cells = set()
 
     for cell_id, cell in sheet['cells'].items():
         if not re_cell_name.match(cell['name']):
@@ -110,29 +110,38 @@ def _calculate_all(sheet: dict) -> None:
         elif any(c['name'] == cell['name'] for i,c in sheet['cells'].items() if cell_id != i):
             cell['computed']['error'] = 'Duplicate cell name'
         else:
-            try:
-                formula = parse(cell['formula'])
-                if isinstance(formula, Import):
-                    resource = get_external_resource(formula.name)
-                    values[cell['name']] = resource
-                else:
-                    deps = get_dependencies(formula)
-                    if any(d not in cell_names for d in deps):
-                        cell['computed']['error'] = 'Unknown cell reference'
-                    else:
+            formula = parse(cell['formula'])
+            formulas[cell_id] = formula
+            cell_info[cell['name']] = CellInfo(cell_id, get_subcell_dims(formula))
+
+    for cell_name, cellinfo in cell_info.items():
+        cell_id = cellinfo.cell_id
+        cell = sheet['cells'][cell_id]
+        try:
+            formula = formulas[cell_id]
+            if isinstance(formula, Import):
+                resource = get_external_resource(formula.name)
+                values[(cell_id, ())] = resource
+            else:
+                for subcells in cellinfo.list_subcells():
+                    subcell_args = dict(zip(get_subcell_dim_names(formula), subcells))
+                    deps = get_dependencies(formula, (), subcell_args, cell_info)
+                    dependencies[(cell_id, subcells)] = deps
+                    if cell['computed']['error'] is None:
                         formulas[cell_id] = parse(cell['formula'])
-                        dependencies[cell_id] = deps
-            # Catch a ParseError or CalculationError and add it to the cell
-            except (ParseError, CalculationError, ImportError) as e:
-                cell['computed']['error'] = str(e)
+        # Catch a ParseError or CalculationError and add it to the cell
+        except (ParseError, CalculationError, ImportError) as e:
+            cell['computed']['error'] = str(e)
 
     # Repeatedly calculate cells until no more cells can be calculated
     while True:
         # Find a formula where all of its dependencies have been calculated
         chosen_cell_id = None
-        for cell_id in formulas.keys():
-            if all(d in values for d in dependencies[cell_id]):
+        chosen_subcell = None
+        for cell_id, subcell in dependencies.keys() - values.keys() - error_cells:
+            if all(d in values for d in dependencies[(cell_id, subcell)]):
                 chosen_cell_id = cell_id
+                chosen_subcell = subcell
                 break
 
         # If no formula was found, then we're done
@@ -143,17 +152,18 @@ def _calculate_all(sheet: dict) -> None:
 
         # Calculate the chosen formula
         try:
-            val = calculate(formulas[chosen_cell_id], values).value
-            values[chosen_cell['name']] = val
+            val = calculate(formulas[chosen_cell_id], dict(values), cell_info, subcell).value
+            values[(chosen_cell_id, chosen_subcell)] = val
             chosen_cell['computed']['value'] = tensorlike_to_str(val)
             chosen_cell['computed']['type'] = type_to_str(val)
         except CalculationError as e:
             sheet['cells'][chosen_cell_id]['computed']['error'] = str(e)
+            error_cells.add((chosen_cell_id, chosen_subcell))
 
-        del formulas[chosen_cell_id]
+        #del formulas[chosen_cell_id]
 
     # Go over any unvisited ones and mark them as cyclic dependencies
-    for cell_id in formulas:
+    for cell_id, _ in dependencies.keys() - values.keys() - error_cells:
         cell = sheet['cells'][cell_id]
         cell['computed']['error'] = 'Cyclic dependency'
 

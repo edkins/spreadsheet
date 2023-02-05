@@ -125,6 +125,15 @@ class FormulaListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by FormulaParser#SubcellArgWithSize.
+    def enterSubcellArgWithSize(self, ctx:FormulaParser.SubcellArgWithSizeContext):
+        pass
+
+    # Exit a parse tree produced by FormulaParser#SubcellArgWithSize.
+    def exitSubcellArgWithSize(self, ctx:FormulaParser.SubcellArgWithSizeContext):
+        pass
+
+
     # Enter a parse tree produced by FormulaParser#ArgWithSize.
     def enterArgWithSize(self, ctx:FormulaParser.ArgWithSizeContext):
         pass
