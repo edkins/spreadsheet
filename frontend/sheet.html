@@ -104,10 +104,10 @@ async function click_sheet(e) {
     // Find the cell at the given coordinates
     var cell_id = find_cell(x, y);
     if (cell_id === undefined) {
-        cell_id = await add_cell_at(x, y);
-        if (cell_id !== undefined) {
-            edit_cell(cell_id);
-        }
+        //cell_id = await add_cell_at(x, y);
+        //if (cell_id !== undefined) {
+        //    edit_cell(cell_id);
+        //}
     } else {
         edit_cell(cell_id);
     }
@@ -165,9 +165,7 @@ function refresh_selected() {
     }
 }
 
-async function add_cell_at(x, y) {
-    const w = 300;
-    const h = 30;
+async function add_cell_at(x, y, w, h) {
     // Generate a random cell id
     const cell_id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const name = '';
@@ -278,14 +276,42 @@ async function update_selected_cells(updater) {
 }
 
 let dragging = false;
+let creating = false;
 let drag_start_x = undefined;
 let drag_start_y = undefined;
 
-function mousemove_sheet(e) {
-    if (e.buttons === 1 && !dragging) {
-        dragging = true;
-        drag_start_x = e.offsetX;
-        drag_start_y = e.offsetY;
+async function mousemove_sheet(e) {
+    if (e.buttons === 1 && !dragging && !creating) {
+        // See if the mouse is over a cell
+        for (const cell_id in data.cells) {
+            const cell = data.cells[cell_id];
+            if (cell.display.x <= e.offsetX && e.offsetX <= cell.display.x + cell.display.w &&
+                cell.display.y <= e.offsetY && e.offsetY <= cell.display.y + cell.display.h) {
+                // If the mouse is over a cell, start dragging
+                dragging = true;
+                drag_start_x = e.offsetX;
+                drag_start_y = e.offsetY;
+                break;
+            }
+        }
+
+        if (!dragging) {
+            creating = true;
+            drag_start_x = e.offsetX;
+            drag_start_y = e.offsetY;
+
+            // Create a creation box
+            const creation_box = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            creation_box.setAttribute('id', 'creation-box');
+            creation_box.setAttribute('x', drag_start_x);
+            creation_box.setAttribute('y', drag_start_y);
+            creation_box.setAttribute('width', 0);
+            creation_box.setAttribute('height', 0);
+            creation_box.setAttribute('fill', 'none');
+            creation_box.setAttribute('stroke', 'black');
+            creation_box.setAttribute('stroke-width', 1);
+            document.getElementById('sheet').appendChild(creation_box);
+        }
     } else if (dragging) {
         if (e.buttons !== 0) {
             const x = e.offsetX;
@@ -301,7 +327,51 @@ function mousemove_sheet(e) {
             }
             refresh_svg();
         } else {
+            update_selected_cells(cell_data => {
+                cell_data.display.x += e.offsetX - drag_start_x;
+                cell_data.display.y += e.offsetY - drag_start_y;
+            });
             dragging = false;
+            refresh_svg();
+        }
+    } else if (creating) {
+        if (e.buttons !== 0) {
+            const x = e.offsetX;
+            const y = e.offsetY;
+            const dx = x - drag_start_x;
+            const dy = y - drag_start_y;
+            const w = Math.abs(dx);
+            const h = Math.abs(dy);
+            const x1 = Math.min(x, drag_start_x);
+            const y1 = Math.min(y, drag_start_y);
+            const x2 = Math.max(x, drag_start_x);
+            const y2 = Math.max(y, drag_start_y);
+            const path = document.getElementById('creation-box');
+            path.setAttribute('x', x1);
+            path.setAttribute('y', y1);
+            path.setAttribute('width', w);
+            path.setAttribute('height', h);
+        } else {
+            creating = false;
+            const x = e.offsetX;
+            const y = e.offsetY;
+            const dx = x - drag_start_x;
+            const dy = y - drag_start_y;
+            const w = Math.abs(dx);
+            const h = Math.abs(dy);
+            const x1 = Math.min(x, drag_start_x);
+            const y1 = Math.min(y, drag_start_y);
+            const x2 = Math.max(x, drag_start_x);
+            const y2 = Math.max(y, drag_start_y);
+            // Remove creation box
+            const path = document.getElementById('creation-box');
+            path.remove();
+
+            // Add the cell
+            const cell_id = await add_cell_at(x1, y1, w, h);
+            selection = [cell_id];
+            refresh_selected();
+            refresh_svg();
         }
     }
 }
