@@ -5,6 +5,7 @@ import os
 import re
 from typing import Optional
 import uuid
+import torch
 
 from calculate import calculate, CalculationError, get_dependencies, CellInfo, get_subcell_dims, get_subcell_dim_names
 from parse import parse, ParseError, Import
@@ -110,9 +111,13 @@ def _calculate_all(sheet: dict) -> None:
         elif any(c['name'] == cell['name'] for i,c in sheet['cells'].items() if cell_id != i):
             cell['computed']['error'] = 'Duplicate cell name'
         else:
-            formula = parse(cell['formula'])
-            formulas[cell_id] = formula
-            cell_info[cell['name']] = CellInfo(cell_id, get_subcell_dims(formula))
+            try:
+                formula = parse(cell['formula'])
+                formulas[cell_id] = formula
+                cell_info[cell['name']] = CellInfo(cell_id, get_subcell_dims(formula))
+            except ParseError as e:
+                cell['computed']['error'] = str(e)
+                error_cells.add(cell_id)
 
     for cell_name, cellinfo in cell_info.items():
         cell_id = cellinfo.cell_id
@@ -123,14 +128,18 @@ def _calculate_all(sheet: dict) -> None:
                 resource = get_external_resource(formula.name)
                 values[(cell_id, ())] = resource
             else:
+                deps_for_main_cell = []
                 for subcells in cellinfo.list_subcells():
                     subcell_args = dict(zip(get_subcell_dim_names(formula), subcells))
                     deps = get_dependencies(formula, (), subcell_args, cell_info)
                     dependencies[(cell_id, subcells)] = deps
                     if cell['computed']['error'] is None:
                         formulas[cell_id] = parse(cell['formula'])
+                    deps_for_main_cell.append((cell_id, subcells))
+                if cellinfo.has_subcells():
+                    dependencies[(cell_id, ())] = deps_for_main_cell
         # Catch a ParseError or CalculationError and add it to the cell
-        except (ParseError, CalculationError, ImportError) as e:
+        except (CalculationError, ImportError) as e:
             cell['computed']['error'] = str(e)
 
     # Repeatedly calculate cells until no more cells can be calculated
@@ -152,10 +161,20 @@ def _calculate_all(sheet: dict) -> None:
 
         # Calculate the chosen formula
         try:
-            val = calculate(formulas[chosen_cell_id], dict(values), cell_info, subcell).value
-            values[(chosen_cell_id, chosen_subcell)] = val
-            chosen_cell['computed']['value'] = tensorlike_to_str(val)
-            chosen_cell['computed']['type'] = type_to_str(val)
+            if subcell == ():
+                if cell_info[chosen_cell['name']].has_subcells():
+                    # Concatenate all the subcells together into one big cell
+                    val = torch.zeros(cell_info[chosen_cell['name']].subcell_dims)
+                    for subcells in cell_info[chosen_cell['name']].list_subcells():
+                        val[subcells] = values[(chosen_cell_id, subcells)]
+                else:
+                    val = calculate(formulas[chosen_cell_id], dict(values), cell_info, subcell).value
+                values[(chosen_cell_id, subcell)] = val
+                chosen_cell['computed']['value'] = tensorlike_to_str(val)
+                chosen_cell['computed']['type'] = type_to_str(val)
+            else:
+                val = calculate(formulas[chosen_cell_id], dict(values), cell_info, subcell).value
+                values[(chosen_cell_id, chosen_subcell)] = val
         except CalculationError as e:
             sheet['cells'][chosen_cell_id]['computed']['error'] = str(e)
             error_cells.add((chosen_cell_id, chosen_subcell))

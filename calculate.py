@@ -92,23 +92,27 @@ def get_dependencies(expr: Expr, lambda_args: tuple[str], subcell_args: dict[str
         if isinstance(expr.expr, Name) and cell_info[expr.expr.name].has_subcells():
             result_deps = set()
             result_subcell = []
-            for i, arg in enumerate(expr.args):
+            for i, arg in enumerate(expr.indexes):
                 if isinstance(arg, NameIndex):
                     if arg.name in subcell_args:
                         result_subcell.append(subcell_args[arg.name])
+                elif isinstance(arg, UintIndex):
+                    result_subcell.append(arg.value)
+                else:
+                    raise CalculationError(f"Can't use {type(arg)} as a subcell index")
                 result_deps |= _get_index_dependencies(arg, lambda_args, subcell_args, cell_info)
-            result.deps.add((expr.expr.name, tuple(result_subcell)))
+            result_deps.add((cell_info[expr.expr.name].cell_id, tuple(result_subcell)))
             return result_deps
         else:
-            return get_dependencies(expr.expr, lambda_args, subcell_args, cell_info).union(*[_get_index_dependencies(index, lambda_args) for index in expr.indexes])
+            return get_dependencies(expr.expr, lambda_args, subcell_args, cell_info).union(*[_get_index_dependencies(index, lambda_args, subcell_args, cell_info) for index in expr.indexes])
     else:
         raise CalculationError(f"Unknown expr kind in get_dependencies: {type(expr)}")
 
-def _get_index_dependencies(index: Index, lambda_args: tuple[str], cell_info: dict[str, CellInfo]) -> set[SubcellId]:
+def _get_index_dependencies(index: Index, lambda_args: tuple[str], subcell_args: dict[str,int], cell_info: dict[str, CellInfo]) -> set[SubcellId]:
     if isinstance(index, UintIndex):
         return set()
     elif isinstance(index, NameIndex):
-        if index.name in lambda_args:
+        if index.name in lambda_args or index.name in subcell_args:
             return set()
         else:
             return {(cell_info[index.name].cell_id, ())}
